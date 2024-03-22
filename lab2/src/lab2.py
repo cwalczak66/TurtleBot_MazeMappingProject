@@ -14,12 +14,12 @@ class Lab2:
         """
         ### REQUIRED CREDIT
         ### Initialize node, name it 'lab2'
-        # TODO
+        rospy.init_node("Lab2")
         ### Tell ROS that this node publishes Twist messages on the '/cmd_vel' topic
         # TODO
         ### Tell ROS that this node subscribes to Odometry messages on the '/odom' topic
         ### When a message is received, call self.update_odometry
-        # TODO
+        rospy.Subscriber ('/odom', Odometry, self.update_odometry)
         ### Tell ROS that this node subscribes to PoseStamped messages on the '/move_base_simple/goal' topic
         ### When a message is received, call self.go_to
         # TODO
@@ -37,7 +37,7 @@ class Lab2:
         ### Make a new Twist message
         # TODO
         ### Publish the message
-        # TODO
+        self.cmd_vel.publish(Twist(linear = Vector3(x =2.0), angular = Vector3(z=0.0)))
         pass # delete this when you implement your code
 
     
@@ -82,8 +82,13 @@ class Lab2:
         :param msg [Odometry] The current odometry information.
         """
         ### REQUIRED CREDIT
-        # TODO
-        pass # delete this when you implement your code
+        self.px = msg.pose.pose.position.x
+        self.py = msg.pose.pose.position.y
+        quat_orig = msg.pose.pose.orientation
+        quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
+        (roll, pitch, yaw) = euler_from_quaternion(quat_list)
+        self.pth = yaw
+        
 
 
 
