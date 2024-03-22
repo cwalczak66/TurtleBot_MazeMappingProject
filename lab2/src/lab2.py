@@ -14,17 +14,19 @@ class Lab2:
         """
         ### REQUIRED CREDIT
         ### Initialize node, name it 'lab2'
+        rospy.init_node('Lab2')
         # TODO
         ### Tell ROS that this node publishes Twist messages on the '/cmd_vel' topic
+        rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         # TODO
         ### Tell ROS that this node subscribes to Odometry messages on the '/odom' topic
         ### When a message is received, call self.update_odometry
+        rospy.Subscriber('/odom', Odometry, self.update_odometry)
         # TODO
         ### Tell ROS that this node subscribes to PoseStamped messages on the '/move_base_simple/goal' topic
         ### When a message is received, call self.go_to
         # TODO
-        pass # delete this when you implement your code
-
+        rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.go_to)
 
 
     def send_speed(self, linear_speed: float, angular_speed: float):
@@ -38,7 +40,8 @@ class Lab2:
         # TODO
         ### Publish the message
         # TODO
-        pass # delete this when you implement your code
+        self.cmd_vel.publish(Twist(linear=Vector3(x=2.0), angular=Vector3(z=0.0)))
+        rate = rospy.Rate(10) # Publish rate of 10Hz
 
     
         
@@ -49,8 +52,29 @@ class Lab2:
         :param linear_speed [float] [m/s] The forward linear speed.
         """
         ### REQUIRED CREDIT
-        pass # delete this when you implement your code
+        # saving initial pose
+        initialPose_x= 0
+        initialPose_y = 0
+        float distanceTolerance = 0.5
+        # initial_pose = [[initialPose_x],[initialPose_y]]
+        currentPose_x = self.px
+        currentPose_y = self.py
+        float Kp = 0.1
 
+        # Proportional control
+        # Euclidean distance difference - "error"
+        distance = sqrt (pow((currentPose_y - initialPose_y),2 ) + (pow(currentPose_x - initialPose_x), 2))
+        linear_speed = Kp * distance
+
+        
+        if distance <= distanceTolerance:
+            linear_speed = 0.0
+        else:
+            rospy.sleep(100)
+
+        initialPose_x = currentPose_x
+        initialPose_y = currentPose_y
+        
 
 
     def rotate(self, angle: float, aspeed: float):
@@ -82,8 +106,14 @@ class Lab2:
         :param msg [Odometry] The current odometry information.
         """
         ### REQUIRED CREDIT
-        # TODO
-        pass # delete this when you implement your code
+        self.px = msg.pose.pose.position.x
+        self.py = msg.pose.pose.position.y
+        quat.orig = msg.pose.pose.orientation
+        quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig_w]
+        (roll, pitch, yaw) = euler_from_quaternion(quat_list)
+        self.pth = yaw
+        
+        rospy.loginfo("Hola")
 
 
 
@@ -104,3 +134,5 @@ class Lab2:
 
 if __name__ == '__main__':
     Lab2().run()
+    
+    
