@@ -5,6 +5,7 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Twist
 from tf.transformations import euler_from_quaternion
+from cmath import sqrt
 
 class Lab2:
 
@@ -27,6 +28,10 @@ class Lab2:
         ### When a message is received, call self.go_to
         # TODO
         rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.go_to)
+        
+        self.px
+        self.py
+        self.pth
 
 
     def send_speed(self, linear_speed: float, angular_speed: float):
@@ -38,11 +43,11 @@ class Lab2:
         ### REQUIRED CREDIT
         ### Make a new Twist message
         # TODO
+        msg = Twist(linear=Vector3(x=2.0), angular=Vector3(z=0.0))
         ### Publish the message
         # TODO
         self.cmd_vel.publish(Twist(linear=Vector3(x=2.0), angular=Vector3(z=0.0)))
         rate = rospy.Rate(10) # Publish rate of 10Hz
-
     
         
     def drive(self, distance: float, linear_speed: float):
@@ -55,22 +60,23 @@ class Lab2:
         # saving initial pose
         initialPose_x= 0
         initialPose_y = 0
-        float distanceTolerance = 0.5
+        distanceTolerance = 0.5
         # initial_pose = [[initialPose_x],[initialPose_y]]
         currentPose_x = self.px
         currentPose_y = self.py
-        float Kp = 0.1
-
+        Kp = 0.1
+        
+        while not rospy.is_shutdown():
         # Proportional control
         # Euclidean distance difference - "error"
-        distance = sqrt (pow((currentPose_y - initialPose_y),2 ) + (pow(currentPose_x - initialPose_x), 2))
-        linear_speed = Kp * distance
+            distance = sqrt (pow(currentPose_y - initialPose_y, 2 ) + (pow(currentPose_x - initialPose_x, 2))**2)
+            linear_speed = Kp * distance
 
         
-        if distance <= distanceTolerance:
-            linear_speed = 0.0
-        else:
-            rospy.sleep(100)
+            if distance <= distanceTolerance:
+                linear_speed = 0.0
+            else:
+                rospy.sleep(100)
 
         initialPose_x = currentPose_x
         initialPose_y = currentPose_y
@@ -108,8 +114,8 @@ class Lab2:
         ### REQUIRED CREDIT
         self.px = msg.pose.pose.position.x
         self.py = msg.pose.pose.position.y
-        quat.orig = msg.pose.pose.orientation
-        quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig_w]
+        quat_orig = msg.pose.pose.orientation
+        quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
         (roll, pitch, yaw) = euler_from_quaternion(quat_list)
         self.pth = yaw
         
@@ -130,7 +136,9 @@ class Lab2:
 
 
     def run(self):
+        self.drive(1.0,0.0)
         rospy.spin()
+        
 
 if __name__ == '__main__':
     Lab2().run()
