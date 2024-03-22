@@ -29,9 +29,9 @@ class Lab2:
         # TODO
         rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.go_to)
         
-        self.px
-        self.py
-        self.pth
+        self.px = 0
+        self.py = 0
+        self.pth = 0
 
 
     def send_speed(self, linear_speed: float, angular_speed: float):
@@ -69,10 +69,11 @@ class Lab2:
         while not rospy.is_shutdown():
         # Proportional control
         # Euclidean distance difference - "error"
-            distance = sqrt (pow(currentPose_y - initialPose_y, 2 ) + (pow(currentPose_x - initialPose_x, 2))**2)
+            distance = abs(sqrt(pow(currentPose_y - initialPose_y, 2 ) + (pow(currentPose_x - initialPose_x, 2))**2))
             linear_speed = Kp * distance
 
-        
+            # print(type(distance))
+            # print(type(distanceTolerance))
             if distance <= distanceTolerance:
                 linear_speed = 0.0
             else:
@@ -136,7 +137,7 @@ class Lab2:
 
 
     def run(self):
-        self.drive(1.0,0.0)
+        self.drive(float(1),1.0)
         rospy.spin()
         
 
