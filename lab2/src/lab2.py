@@ -3,7 +3,7 @@
 import rospy
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, Vector3
 from tf.transformations import euler_from_quaternion
 from cmath import sqrt
 
@@ -18,20 +18,23 @@ class Lab2:
         rospy.init_node('Lab2')
         # TODO
         ### Tell ROS that this node publishes Twist messages on the '/cmd_vel' topic
-        rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+        self.cmd_pub=rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         # TODO
         ### Tell ROS that this node subscribes to Odometry messages on the '/odom' topic
         ### When a message is received, call self.update_odometry
+        
         rospy.Subscriber('/odom', Odometry, self.update_odometry)
+        
         # TODO
         ### Tell ROS that this node subscribes to PoseStamped messages on the '/move_base_simple/goal' topic
         ### When a message is received, call self.go_to
         # TODO
+        
         rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.go_to)
         
-        self.px
-        self.py
-        self.pth
+        self.px = 0
+        self.py = 0
+        self.pth = 0
 
 
     def send_speed(self, linear_speed: float, angular_speed: float):
@@ -43,10 +46,10 @@ class Lab2:
         ### REQUIRED CREDIT
         ### Make a new Twist message
         # TODO
-        msg = Twist(linear=Vector3(x=2.0), angular=Vector3(z=0.0))
+        # msg = Twist(linear=Vector3(x=0.1), angular=Vector3(z=0.0))
         ### Publish the message
+        self.cmd_pub.publish(Twist(linear=Vector3(x=0.1), angular=Vector3(z=0.0)))
         # TODO
-        self.cmd_vel.publish(Twist(linear=Vector3(x=2.0), angular=Vector3(z=0.0)))
         rate = rospy.Rate(10) # Publish rate of 10Hz
     
         
@@ -69,10 +72,10 @@ class Lab2:
         while not rospy.is_shutdown():
         # Proportional control
         # Euclidean distance difference - "error"
-            distance = sqrt (pow(currentPose_y - initialPose_y, 2 ) + (pow(currentPose_x - initialPose_x, 2))**2)
+            distance = abs(sqrt(pow(currentPose_y - initialPose_y, 2 ) + (pow(currentPose_x - initialPose_x, 2))**2))
             linear_speed = Kp * distance
 
-        
+            
             if distance <= distanceTolerance:
                 linear_speed = 0.0
             else:
@@ -80,6 +83,8 @@ class Lab2:
 
         initialPose_x = currentPose_x
         initialPose_y = currentPose_y
+        #self.send_speed(linear_speed, 0)
+        self.send_speed(5,0)
         
 
 
@@ -136,7 +141,7 @@ class Lab2:
 
 
     def run(self):
-        self.drive(1.0,0.0)
+        self.send_speed(0,0)
         rospy.spin()
         
 
