@@ -75,7 +75,12 @@ class Lab2:
             distance = abs(sqrt(pow(currentPose_y - initialPose_y, 2 ) + (pow(currentPose_x - initialPose_x, 2))**2))
             linear_speed = Kp * distance
 
+<<<<<<< HEAD
             
+=======
+            # print(type(distance))
+            # print(type(distanceTolerance))
+>>>>>>> c3d7a6e8258d8eecaa4342b9b20c0f2a69383a8e
             if distance <= distanceTolerance:
                 linear_speed = 0.0
             else:
@@ -141,7 +146,11 @@ class Lab2:
 
 
     def run(self):
+<<<<<<< HEAD
         self.send_speed(0,0)
+=======
+        self.drive(float(1),1.0)
+>>>>>>> c3d7a6e8258d8eecaa4342b9b20c0f2a69383a8e
         rospy.spin()
         
 
