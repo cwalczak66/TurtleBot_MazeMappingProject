@@ -5,7 +5,7 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Twist, Vector3
 from tf.transformations import euler_from_quaternion
-from cmath import sqrt
+from cmath import sqrt , pi
 
 class Lab2:
 
@@ -18,7 +18,7 @@ class Lab2:
         rospy.init_node('Lab2')
         # TODO
         ### Tell ROS that this node publishes Twist messages on the '/cmd_vel' topic
-        self.cmd_pub=rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+        self.cmd_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         # TODO
         ### Tell ROS that this node subscribes to Odometry messages on the '/odom' topic
         ### When a message is received, call self.update_odometry
@@ -35,6 +35,11 @@ class Lab2:
         self.px = 0
         self.py = 0
         self.pth = 0
+        
+        # self.orix = 0
+        # self.oriy = 0
+        # self.oriz = 0
+        # self.oriw = 0
 
 
     def send_speed(self, linear_speed: float, angular_speed: float):
@@ -48,7 +53,7 @@ class Lab2:
         # TODO
         # msg = Twist(linear=Vector3(x=0.1), angular=Vector3(z=0.0))
         ### Publish the message
-        self.cmd_pub.publish(Twist(linear=Vector3(x=0.1), angular=Vector3(z=0.0)))
+        self.cmd_pub.publish(Twist(linear=Vector3(x=0.0), angular=Vector3(z=0.0)))
         # TODO
         rate = rospy.Rate(10) # Publish rate of 10Hz
     
@@ -61,8 +66,8 @@ class Lab2:
         """
         ### REQUIRED CREDIT
         # saving initial pose
-        initialPose_x= 0
-        initialPose_y = 0
+        initialPose_x= self.px
+        initialPose_y = self.py
         distanceTolerance = 0.5
         # initial_pose = [[initialPose_x],[initialPose_y]]
         currentPose_x = self.px
@@ -75,21 +80,15 @@ class Lab2:
             distance = abs(sqrt(pow(currentPose_y - initialPose_y, 2 ) + (pow(currentPose_x - initialPose_x, 2))**2))
             linear_speed = Kp * distance
 
-<<<<<<< HEAD
             
-=======
             # print(type(distance))
             # print(type(distanceTolerance))
->>>>>>> c3d7a6e8258d8eecaa4342b9b20c0f2a69383a8e
             if distance <= distanceTolerance:
                 linear_speed = 0.0
             else:
                 rospy.sleep(100)
-
-        initialPose_x = currentPose_x
-        initialPose_y = currentPose_y
         #self.send_speed(linear_speed, 0)
-        self.send_speed(5,0)
+        self.send_speed(linear_speed,0)
         
 
 
@@ -100,7 +99,16 @@ class Lab2:
         :param angular_speed [float] [rad/s] The angular speed.
         """
         ### REQUIRED CREDIT
-        pass # delete this when you implement your code
+        ang_tol = pi/10
+        if abs(self.pth-angle) != ang_tol:
+            if self.pth - angle > pi:
+                #self.cmd_pub.publish(Twist(linear=Vector3(x=0.0), angular=Vector3(z=1.0)))
+                self.send_speed(0,1)
+            else:
+                #self.cmd_pub.publish(Twist(linear=Vector3(x=0.0), angular=Vector3(z=-1.0)))
+                self.send_speed(0,-1)
+
+        #pass # delete this when you implement your code
 
 
 
@@ -129,7 +137,7 @@ class Lab2:
         (roll, pitch, yaw) = euler_from_quaternion(quat_list)
         self.pth = yaw
         
-        rospy.loginfo("Hola")
+        # rospy.loginfo("Hola")
 
 
 
@@ -145,12 +153,13 @@ class Lab2:
 
 
 
+
     def run(self):
-<<<<<<< HEAD
-        self.send_speed(0,0)
-=======
-        self.drive(float(1),1.0)
->>>>>>> c3d7a6e8258d8eecaa4342b9b20c0f2a69383a8e
+        # while True:
+        #     self.send_speed(1,1)
+        self.drive(1.0,1.0)
+        #self.rotate(pi , .5)   
+         
         rospy.spin()
         
 
