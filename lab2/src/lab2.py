@@ -5,7 +5,7 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Twist, Vector3
 from tf.transformations import euler_from_quaternion
-from cmath import sqrt , pi
+from cmath import sqrt , pi, atan2, sin, cos 
 
 class Lab2:
 
@@ -34,13 +34,9 @@ class Lab2:
         
         self.px = 0
         self.py = 0
-        self.pth = 0
-        
-        # self.orix = 0
-        # self.oriy = 0
-        # self.oriz = 0
-        # self.oriw = 0
 
+        # yaw angle
+        self.pth = 0  
 
     def send_speed(self, linear_speed: float, angular_speed: float):
         """
@@ -51,9 +47,9 @@ class Lab2:
         ### REQUIRED CREDIT
         ### Make a new Twist message
         # TODO
-        # msg = Twist(linear=Vector3(x=0.1), angular=Vector3(z=0.0))
+        msg = Twist(linear=Vector3(x=0.1), angular=Vector3(z=0.0))
         ### Publish the message
-        self.cmd_pub.publish(Twist(linear=Vector3(x=0.0), angular=Vector3(z=0.0)))
+        self.cmd_pub.publish(Twist(linear=Vector3(x=0.1), angular=Vector3(z=0.0)))
         # TODO
         rate = rospy.Rate(10) # Publish rate of 10Hz
     
@@ -86,9 +82,8 @@ class Lab2:
             if distance <= distanceTolerance:
                 linear_speed = 0.0
             else:
-                rospy.sleep(100)
-        #self.send_speed(linear_speed, 0)
-        self.send_speed(linear_speed,0)
+                rospy.sleep(0.1)
+            self.send_speed(linear_speed,0)
         
 
 
@@ -99,16 +94,33 @@ class Lab2:
         :param angular_speed [float] [rad/s] The angular speed.
         """
         ### REQUIRED CREDIT
-        ang_tol = pi/10
-        if abs(self.pth-angle) != ang_tol:
-            if self.pth - angle > pi:
-                #self.cmd_pub.publish(Twist(linear=Vector3(x=0.0), angular=Vector3(z=1.0)))
-                self.send_speed(0,1)
-            else:
-                #self.cmd_pub.publish(Twist(linear=Vector3(x=0.0), angular=Vector3(z=-1.0)))
-                self.send_speed(0,-1)
+        target_yaw = self.pth + angle
+        ang_tol = 0.1
+        angle_difference = target_yaw - self.pth
 
-        #pass # delete this when you implement your code
+        # Normalizing angle difference to range btw pi and -pi
+        angle_difference = atan2(sin(angle_difference), cos(angle_difference))
+           
+        if angle_difference <= ang_tol:
+            self.send_speed(0,0)
+        else:
+            # Normalizing angle difference to range btw pi and -pi
+            if angle_difference > 0:
+                self.send_speed(0, aspeed)
+            else:
+                self.send_speed(0, -aspeed)
+        
+
+        # if abs(self.pth - target_yaw) != ang_tol:
+        #     if self.pth - angle > pi:
+        #         #self.cmd_pub.publish(Twist(linear=Vector3(x=0.0), angular=Vector3(z=1.0)))
+        #         self.send_speed(0,1)
+        #     else:
+        #         #self.cmd_pub.publish(Twist(linear=Vector3(x=0.0), angular=Vector3(z=-1.0)))
+        #         self.send_speed(0,-1)
+        # else:
+        #     self.send_speed(0,0)
+    
 
 
 
@@ -157,8 +169,8 @@ class Lab2:
     def run(self):
         # while True:
         #     self.send_speed(1,1)
-        self.drive(1.0,1.0)
-        #self.rotate(pi , .5)   
+        self.drive(1.0,0)
+        self.rotate(pi,0.5)   
          
         rospy.spin()
         
