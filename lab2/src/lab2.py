@@ -5,7 +5,7 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Twist, Vector3
 from tf.transformations import euler_from_quaternion
-from cmath import sqrt , pi, atan2, sin, cos 
+from math import sqrt , pi, atan2, sin, cos 
 
 class Lab2:
 
@@ -47,9 +47,9 @@ class Lab2:
         ### REQUIRED CREDIT
         ### Make a new Twist message
         # TODO
-        msg = Twist(linear=Vector3(x=0.1), angular=Vector3(z=0.0))
+        msg = Twist(linear=Vector3(x=linear_speed), angular=Vector3(z=angular_speed))
         ### Publish the message
-        self.cmd_pub.publish(Twist(linear=Vector3(x=0.1), angular=Vector3(z=0.0)))
+        self.cmd_pub.publish(Twist(linear=Vector3(x=linear_speed), angular=Vector3(z=angular_speed)))
         # TODO
         rate = rospy.Rate(10) # Publish rate of 10Hz
     
@@ -95,21 +95,26 @@ class Lab2:
         """
         ### REQUIRED CREDIT
         target_yaw = self.pth + angle
-        ang_tol = 0.1
+        ang_tol = 0.01
         angle_difference = target_yaw - self.pth
 
         # Normalizing angle difference to range btw pi and -pi
         angle_difference = atan2(sin(angle_difference), cos(angle_difference))
-           
-        if angle_difference <= ang_tol:
-            self.send_speed(0,0)
-        else:
-            # Normalizing angle difference to range btw pi and -pi
-            if angle_difference > 0:
-                self.send_speed(0, aspeed)
-            else:
-                self.send_speed(0, -aspeed)
         
+        while not rospy.is_shutdown():
+
+            if angle_difference <= ang_tol:
+                self.send_speed(0,0)
+            else:
+            # Normalizing angle difference to range btw pi and -pi
+                if angle_difference > 0:
+                    self.send_speed(0, aspeed )
+                    print("clockwise")
+                    print(angle_difference)
+                else:
+                    self.send_speed(0, -aspeed)
+                    print("anti-clockwise")
+
 
         # if abs(self.pth - target_yaw) != ang_tol:
         #     if self.pth - angle > pi:
@@ -169,8 +174,8 @@ class Lab2:
     def run(self):
         # while True:
         #     self.send_speed(1,1)
-        self.drive(1.0,0)
-        self.rotate(pi,0.5)   
+       # self.drive(1.0,0)
+        self.rotate(pi/2,1)   
          
         rospy.spin()
         
