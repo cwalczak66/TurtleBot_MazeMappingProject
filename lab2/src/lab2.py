@@ -136,7 +136,40 @@ class Lab2:
         :param msg [PoseStamped] The target pose.
         """
         ### REQUIRED CREDIT
-        pass # delete this when you implement your code
+        current_angle = self.pth
+        current_x = self.px
+        current_y = self.py
+        target_x = PoseStamped.pose.position.x
+        target_y = PoseStamped.pose.position.y
+        delta_y = target_y - current_y
+        delta_x = target_x - current_x
+        
+        angle_to_pose = atan2(delta_y, delta_x)
+        target_angle = current_angle + PoseStamped.pose.orientation.w
+        angle_diff = target_angle - current_angle
+
+        while not rospy.is_shutdown():
+
+            # Rotate to look at target location
+            self.rotate(angle_to_pose, 0)
+            print("rotation 1 complete!")
+
+            # Drive to target location
+            distance_to_target = abs(sqrt(pow(delta_y, 2 ) + (pow(delta_x, 2))**2))
+            linear_speed = Kp * distance_to_target
+            self.drive(distance_to_target, linear_speed)
+            print("Reached target location!")
+
+            # Rotate to target orientation
+            self.rotate(angle_diff, 0)
+            print("Reached target pose!")
+
+
+
+
+
+            
+
 
 
 
@@ -175,7 +208,8 @@ class Lab2:
         # while True:
         #     self.send_speed(1,1)
        # self.drive(1.0,0)
-        self.rotate(pi/2,1)   
+       # self.rotate(pi/2,1) 
+        self.go_to(msg=PoseStamped)  
          
         rospy.spin()
         
