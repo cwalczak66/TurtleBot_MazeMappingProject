@@ -96,7 +96,7 @@ class Lab2:
         """
         ### REQUIRED CREDIT
         target_yaw = self.pth + angle
-        ang_tol = 0.01
+        ang_tol = 0.1
         angle_difference = target_yaw - self.pth
 
         # Normalizing angle difference to range btw pi and -pi
@@ -116,7 +116,7 @@ class Lab2:
                     self.send_speed(0, -aspeed)
                     print("anti-clockwise")
 
-
+        self.send_speed(0.0, 0.0)
         # if abs(self.pth - target_yaw) != ang_tol:
         #     if self.pth - angle > pi:
         #         #self.cmd_pub.publish(Twist(linear=Vector3(x=0.0), angular=Vector3(z=1.0)))
@@ -204,7 +204,7 @@ class Lab2:
         # while True:
         #     self.send_speed(1,1)
        # self.drive(1.0,0)
-       # self.rotate(pi/2,1) 
+        #self.rotate(pi/2,1) 
         self.drive(10.0, 0.5) 
         rospy.spin()
         
