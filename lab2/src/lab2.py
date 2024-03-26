@@ -31,10 +31,11 @@ class Lab2:
         # TODO
         
         rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.go_to)
-        
+        self.xpose = PoseStamped.pose #.position.x
+        #print(self.xpose)
         self.px = 0
         self.py = 0
-
+        self.kp = 0.1
         # yaw angle
         self.pth = 0  
 
@@ -68,7 +69,7 @@ class Lab2:
         # initial_pose = [[initialPose_x],[initialPose_y]]
         currentPose_x = self.px
         currentPose_y = self.py
-        Kp = 0.1
+        Kp = self.kp
         
         while not rospy.is_shutdown():
         # Proportional control
@@ -139,13 +140,15 @@ class Lab2:
         current_angle = self.pth
         current_x = self.px
         current_y = self.py
-        target_x = PoseStamped.pose.position.x
-        target_y = PoseStamped.pose.position.y
+        print(msg.pose.position)
+        target_x = msg.pose.position.x #.position.x 
+        target_y = msg.pose #.position.y
         delta_y = target_y - current_y
         delta_x = target_x - current_x
+        Kp = self.kp
         
         angle_to_pose = atan2(delta_y, delta_x)
-        target_angle = current_angle + PoseStamped.pose.orientation.w
+        target_angle = current_angle + msg.pose.orientation.w
         angle_diff = target_angle - current_angle
 
         while not rospy.is_shutdown():
@@ -163,13 +166,6 @@ class Lab2:
             # Rotate to target orientation
             self.rotate(angle_diff, 0)
             print("Reached target pose!")
-
-
-
-
-
-            
-
 
 
 
