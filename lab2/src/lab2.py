@@ -46,8 +46,9 @@ class Lab2:
         """
         ### REQUIRED CREDIT
         ### Make a new Twist message
+        
         msg = Twist(linear=Vector3(x=linear_speed), angular=Vector3(z=angular_speed))
-
+        print(f"message sending, rot= {angular_speed}")
         ### Publish the message
         self.cmd_pub.publish(msg)
          
@@ -85,6 +86,28 @@ class Lab2:
             # print(type(distance))
             # print(type(distanceTolerance))
         self.send_speed(0.0, 0.0)
+
+    
+    def rotate2(self, angle: float, aspeed: float):
+        ### REQUIRED CREDIT
+        initTh = self.pth
+        tolerance = 0.1
+        diff = self.calcDeltaTh(initTh, self.pth)
+        angle = -self.calcDeltaTh(initTh, (initTh + angle) % (2 * pi))
+        
+        rospy.loginfo("Turning %f", angle)
+        while abs(angle - diff) > tolerance:
+            # rospy.loginfo(angle, diff, angle - diff)
+            self.send_speed(0.0, aspeed * (1 if angle < 0 else -1))
+            diff = self.calcDeltaTh(initTh, self.pth)
+            rospy.sleep(0.05)
+        self.send_speed(0.0, 0.0)
+
+    def calcDeltaTh(self, initTh, goalTh):
+        deltaTh = initTh - goalTh
+        if abs(deltaTh) > pi:
+            deltaTh += 2*pi * (1 if deltaTh < 0 else -1)
+        return deltaTh
         
 
 
@@ -96,37 +119,42 @@ class Lab2:
         """
         ### REQUIRED CREDIT
         #target_yaw = self.pth + angle
-        ang_tol = 0.5
-
-        while not rospy.is_shutdown():
+        ang_tol = 0.1
+        while True:
             angle_difference = angle - self.pth
             #print(self.pth)
 
             # Normalizing angle difference to range btw pi and -pi
             #angle_difference = atan2(sin(angle_difference), cos(angle_difference))
             #print(angle_difference)
-            if angle_difference > pi:
+            while angle_difference > pi:
                 angle_difference = angle_difference - 2 * pi
-            elif angle_difference < -pi:
+            while angle_difference < -pi:
                 angle_difference = angle_difference + 2*pi
             #print("ready to rotate")
             
             print(angle_difference)
             if angle_difference <= ang_tol:
+                
+                self.send_speed(0.0,0.0)
+                rospy.sleep(0.5)
                 self.send_speed(0,0)
+                
                 print("reached goal!")
                 break
             else:
                 # Normalizing angle difference to range btw pi and -pi
                 if angle_difference > 0:    
                     self.send_speed(0, aspeed )
-                    print("clockwise")
+                    #print("clockwise")
                     
                 else:
                     self.send_speed(0, -aspeed)
-                    print("anti-clockwise")
+                    #print("anti-clockwise")
+            rospy.sleep(0.05)
 
-        self.send_speed(0.0, 0.0)
+        print("robot should stop now")
+        self.send_speed(0.0,0.0)
         # if abs(self.pth - target_yaw) != ang_tol:
         #     if self.pth - angle > pi:
         #         #self.cmd_pub.publish(Twist(linear=Vector3(x=0.0), angular=Vector3(z=1.0)))
@@ -147,12 +175,13 @@ class Lab2:
         :param msg [PoseStamped] The target pose.
         """
         ### REQUIRED CREDIT
+        print("in goto")
         current_angle = self.pth
         current_x = self.px
         current_y = self.py
         print(msg.pose.position)
         target_x = msg.pose.position.x #.position.x 
-        target_y = msg.pose #.position.y
+        target_y = msg.pose.position.y
         delta_y = target_y - current_y
         delta_x = target_x - current_x
         Kp = self.kp
@@ -214,8 +243,8 @@ class Lab2:
         # while True:
         #     self.send_speed(1,1)
        # self.drive(1.0,0)
-        self.rotate( pi/2,.5) 
-       # self.drive(10.0, 0.5) 
+        self.rotate2( pi/2,.5) 
+        #self.drive(1.0, 0.5) 
         rospy.spin()
         
 
