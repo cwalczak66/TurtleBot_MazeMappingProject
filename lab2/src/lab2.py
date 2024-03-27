@@ -30,7 +30,7 @@ class Lab2:
         # TODO
         
         rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.go_to)
-        self.xpose = PoseStamped.pose #.position.x
+        #self.xpose = PoseStamped.pose #.position.x
         #print(self.xpose)
         self.px = 0
         self.py = 0
@@ -87,7 +87,7 @@ class Lab2:
         self.send_speed(0.0, 0.0)
         
 
-
+#ROTATE TO ANGLE DEPENDS ON ROBOT POSE
     def rotate(self, angle: float, aspeed: float):
         """
         Rotates the robot around the body center by the given angle.
@@ -99,7 +99,7 @@ class Lab2:
         ang_tol = 0.5
 
         while not rospy.is_shutdown():
-            angle_difference = angle - self.pth
+            angle_difference = (angle - self.pth)% (2* pi)
             #print(self.pth)
 
             # Normalizing angle difference to range btw pi and -pi
@@ -119,13 +119,14 @@ class Lab2:
             else:
                 # Normalizing angle difference to range btw pi and -pi
                 if angle_difference > 0:    
-                    self.send_speed(0, aspeed )
+                    self.send_speed(0, aspeed)
                     print("clockwise")
                     
                 else:
                     self.send_speed(0, -aspeed)
                     print("anti-clockwise")
-
+                    
+        self.send_speed(0,0)
 
         # if abs(self.pth - target_yaw) != ang_tol:
         #     if self.pth - angle > pi:
@@ -147,35 +148,39 @@ class Lab2:
         :param msg [PoseStamped] The target pose.
         """
         ### REQUIRED CREDIT
-        current_angle = self.pth
-        current_x = self.px
-        current_y = self.py
-        print(msg.pose.position)
-        target_x = msg.pose.position.x #.position.x 
-        target_y = msg.pose #.position.y
-        delta_y = target_y - current_y
-        delta_x = target_x - current_x
+ 
+
+        #print(msg.pose.position)
+        target_x = msg.pose.position.x
+        target_y = msg.pose.position.y 
+        delta_y = target_y - self.px
+        delta_x = target_x - self.py
         Kp = self.kp
         
         angle_to_pose = atan2(delta_y, delta_x)
-        target_angle = current_angle + msg.pose.orientation.w
-        angle_diff = target_angle - current_angle
 
-        while not rospy.is_shutdown():
 
-            # Rotate to look at target location
-            self.rotate(angle_to_pose, 0)
-            print("rotation 1 complete!")
 
-            # Drive to target location
-            distance_to_target = abs(sqrt(pow(delta_y, 2 ) + (pow(delta_x, 2))**2))
-            linear_speed = Kp * distance_to_target
-            self.drive(distance_to_target, linear_speed)
-            print("Reached target location!")
 
-            # Rotate to target orientation
-            self.rotate(angle_diff, 0)
-            print("Reached target pose!")
+        #angle_diff = target_angle - self.pth
+
+        #while not rospy.is_shutdown():
+
+
+
+        # Rotate to look at target location
+        self.rotate(angle_to_pose, 0.5)
+        print("rotation 1 complete!")
+
+        # Drive to target location
+        distance_to_target = abs(sqrt(pow(delta_y, 2 ) + (pow(delta_x, 2))**2))
+        
+        self.drive(distance_to_target, .5)
+        print("Reached target location!")
+
+        # Rotate to target orientation
+        self.rotate(msg.pose.orientation.z, 0)
+        print("Reached target pose!")
 
 
 
@@ -213,8 +218,8 @@ class Lab2:
     def run(self):
         # while True:
         #     self.send_speed(1,1)
-       # self.drive(1.0,0)
-        self.rotate( pi/2,.5) 
+        #self.drive(1.0,2.0)
+        self.rotate(pi/3,.5) 
        # self.drive(10.0, 0.5) 
         rospy.spin()
         
