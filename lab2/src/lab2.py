@@ -88,27 +88,7 @@ class Lab2:
         self.send_speed(0.0, 0.0)
 
     
-    def rotate2(self, angle: float, aspeed: float):
-        ### REQUIRED CREDIT
-        initTh = self.pth
-        tolerance = 0.1
-        diff = self.calcDeltaTh(initTh, self.pth)
-        angle = -self.calcDeltaTh(initTh, (initTh + angle) % (2 * pi))
-        
-        rospy.loginfo("Turning %f", angle)
-        while abs(angle - diff) > tolerance:
-            # rospy.loginfo(angle, diff, angle - diff)
-            self.send_speed(0.0, aspeed * (1 if angle < 0 else -1))
-            diff = self.calcDeltaTh(initTh, self.pth)
-            rospy.sleep(0.05)
-        self.send_speed(0.0, 0.0)
-
-    def calcDeltaTh(self, initTh, goalTh):
-        deltaTh = initTh - goalTh
-        if abs(deltaTh) > pi:
-            deltaTh += 2*pi * (1 if deltaTh < 0 else -1)
-        return deltaTh
-        
+    
 
 
     def rotate(self, angle: float, aspeed: float):
@@ -243,7 +223,7 @@ class Lab2:
         # while True:
         #     self.send_speed(1,1)
        # self.drive(1.0,0)
-        self.rotate2( pi/2,.5) 
+        self.rotate( pi/2,.5) 
         #self.drive(1.0, 0.5) 
         rospy.spin()
         
