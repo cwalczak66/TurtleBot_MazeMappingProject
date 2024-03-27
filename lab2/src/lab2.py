@@ -48,7 +48,7 @@ class Lab2:
         ### Make a new Twist message
         
         msg = Twist(linear=Vector3(x=linear_speed), angular=Vector3(z=angular_speed))
-        print(f"message sending, rot= {angular_speed} lin= {linear_speed}")
+        #print(f"message sending, rot= {angular_speed} lin= {linear_speed}")
         ### Publish the message
         self.cmd_pub.publish(msg)
          
@@ -61,11 +61,11 @@ class Lab2:
         """
         ### REQUIRED CREDIT
         # wait until a new odometry msg is recived
-        print("in drive")
+        print(f'in drive, distance target: {distance}')
         rospy.wait_for_message("/odom", Odometry)
         initialPose_x = self.px
         initialPose_y = self.py
-        distanceTolerance = 0.5
+        distanceTolerance = 0.1
         #Kp = 0.1
         # initial_pose = [[initialPose_x],[initialPose_y]]
         # currentPose_x = 1.0
@@ -82,14 +82,14 @@ class Lab2:
             self.send_speed(linear_speed, 0.0)
             rate.sleep()
             curr_distance = abs(sqrt(pow(self.py - initialPose_y, 2 ) + (pow(self.px - initialPose_x, 2))**2))
-            #rospy.loginfo(f'remaining distance: {abs(distance - curr_distance)}')
+            rospy.loginfo(f'remaining distance: {abs(distance - curr_distance)}')
             #rospy.loginfo()
             # print(type(distance))
             # print(type(distanceTolerance))
-            rospy.sleep(0.5)
+            #rospy.sleep(0.5)
         self.send_speed(0.0, 0.0)
+        print("reached distance goal")
 
-    
     
 
 #ROTATE TO ANGLE DEPENDS ON ROBOT POSE
@@ -102,10 +102,11 @@ class Lab2:
         ### REQUIRED CREDIT
         #target_yaw = self.pth + angle
         ang_tol = 0.1
-
+        rospy.wait_for_message("/odom", Odometry)
+        rate = rospy.Rate(10) # Publish rate of 10Hz
         while not rospy.is_shutdown():
             angle_difference = (angle - self.pth)% (2* pi)
-            #print(self.pth)
+            print(f'target angle: {angle} current angle: {self.pth} angle difference: {angle_difference}')
 
             # Normalizing angle difference to range btw pi and -pi
             #angle_difference = atan2(sin(angle_difference), cos(angle_difference))
@@ -115,10 +116,10 @@ class Lab2:
             while angle_difference < -pi:
                 angle_difference = angle_difference + 2*pi
             #print("ready to rotate")
-            
+            rate.sleep()
             #print(angle_difference)
             
-            if angle_difference <= ang_tol:
+            if abs(angle_difference) <= ang_tol:
                 
                 self.send_speed(0.0,0.0)
                 rospy.sleep(0.5)
@@ -160,14 +161,11 @@ class Lab2:
         :param msg [PoseStamped] The target pose.
         """
         ### REQUIRED CREDIT
- 
-
         print(msg.pose.position)
         target_x = msg.pose.position.x
         target_y = msg.pose.position.y 
         delta_y = target_y - self.px
         delta_x = target_x - self.py
-        
         angle_to_pose = atan2(delta_y, delta_x)
 
 
@@ -192,7 +190,7 @@ class Lab2:
         rospy.sleep(0.7)
 
         # Rotate to target orientation
-        self.rotate(msg.pose.orientation.z, 0.0)
+        self.rotate(msg.pose.orientation.z, 0.5)
         print("Reached target pose!")
 
 
@@ -232,8 +230,8 @@ class Lab2:
         # while True:
         #     self.send_speed(1,1)
         #self.drive(1.0,2.0)
-        #self.rotate(pi/3,.5) 
-       # self.drive(10.0, 0.5) 
+        #self.rotate(0.0,0.5) 
+        #self.drive(0.6, 0.5) 
         rospy.spin()
         
 
