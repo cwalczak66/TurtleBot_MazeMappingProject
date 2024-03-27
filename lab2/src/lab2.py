@@ -157,25 +157,14 @@ class Lab2:
         :param msg [PoseStamped] The target pose.
         """
         ### REQUIRED CREDIT
- 
-
         #print(msg.pose.position)
         target_x = msg.pose.position.x
         target_y = msg.pose.position.y 
         delta_y = target_y - self.px
         delta_x = target_x - self.py
-        Kp = self.kp
+        
         
         angle_to_pose = atan2(delta_y, delta_x)
-
-
-
-
-        #angle_diff = target_angle - self.pth
-
-        #while not rospy.is_shutdown():
-
-
 
         # Rotate to look at target location
         self.rotate(angle_to_pose, 0.5)
