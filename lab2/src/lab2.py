@@ -48,7 +48,7 @@ class Lab2:
         ### Make a new Twist message
         
         msg = Twist(linear=Vector3(x=linear_speed), angular=Vector3(z=angular_speed))
-        print(f"message sending, rot= {angular_speed}")
+        print(f"message sending, rot= {angular_speed} lin= {linear_speed}")
         ### Publish the message
         self.cmd_pub.publish(msg)
          
@@ -61,6 +61,7 @@ class Lab2:
         """
         ### REQUIRED CREDIT
         # wait until a new odometry msg is recived
+        print("in drive")
         rospy.wait_for_message("/odom", Odometry)
         initialPose_x = self.px
         initialPose_y = self.py
@@ -81,10 +82,11 @@ class Lab2:
             self.send_speed(linear_speed, 0.0)
             rate.sleep()
             curr_distance = abs(sqrt(pow(self.py - initialPose_y, 2 ) + (pow(self.px - initialPose_x, 2))**2))
-            rospy.loginfo(f'remaining distance: {abs(distance - curr_distance)}')
+            #rospy.loginfo(f'remaining distance: {abs(distance - curr_distance)}')
             #rospy.loginfo()
             # print(type(distance))
             # print(type(distanceTolerance))
+            rospy.sleep(0.5)
         self.send_speed(0.0, 0.0)
 
     
@@ -99,7 +101,7 @@ class Lab2:
         """
         ### REQUIRED CREDIT
         #target_yaw = self.pth + angle
-        ang_tol = 0.5
+        ang_tol = 0.1
 
         while not rospy.is_shutdown():
             angle_difference = (angle - self.pth)% (2* pi)
@@ -114,7 +116,8 @@ class Lab2:
                 angle_difference = angle_difference + 2*pi
             #print("ready to rotate")
             
-            print(angle_difference)
+            #print(angle_difference)
+            
             if angle_difference <= ang_tol:
                 
                 self.send_speed(0.0,0.0)
@@ -127,14 +130,14 @@ class Lab2:
                 # Normalizing angle difference to range btw pi and -pi
                 if angle_difference > 0:    
                     self.send_speed(0, aspeed)
-                    print("clockwise")
+                    #print("clockwise")
                     
                 else:
                     self.send_speed(0, -aspeed)
-                    print("anti-clockwise")
+                    #print("anti-clockwise")
+                rospy.sleep(0.5)
         
         self.send_speed(0,0)
-
         print("robot should stop now")
         self.send_speed(0.0,0.0)
         # if abs(self.pth - target_yaw) != ang_tol:
@@ -159,12 +162,11 @@ class Lab2:
         ### REQUIRED CREDIT
  
 
-        #print(msg.pose.position)
+        print(msg.pose.position)
         target_x = msg.pose.position.x
         target_y = msg.pose.position.y 
         delta_y = target_y - self.px
         delta_x = target_x - self.py
-        Kp = self.kp
         
         angle_to_pose = atan2(delta_y, delta_x)
 
@@ -178,17 +180,19 @@ class Lab2:
 
 
         # Rotate to look at target location
+        print("TIME FOR ROTATION ONE!")
         self.rotate(angle_to_pose, 0.5)
         print("rotation 1 complete!")
-
+        rospy.sleep(0.7)
         # Drive to target location
         distance_to_target = abs(sqrt(pow(delta_y, 2 ) + (pow(delta_x, 2))**2))
         
-        self.drive(distance_to_target, .5)
+        self.drive(distance_to_target, 0.5)
         print("Reached target location!")
+        rospy.sleep(0.7)
 
         # Rotate to target orientation
-        self.rotate(msg.pose.orientation.z, 0)
+        self.rotate(msg.pose.orientation.z, 0.0)
         print("Reached target pose!")
 
 
@@ -228,7 +232,7 @@ class Lab2:
         # while True:
         #     self.send_speed(1,1)
         #self.drive(1.0,2.0)
-        self.rotate(pi/3,.5) 
+        #self.rotate(pi/3,.5) 
        # self.drive(10.0, 0.5) 
         rospy.spin()
         
