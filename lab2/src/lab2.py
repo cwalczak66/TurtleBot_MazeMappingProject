@@ -46,8 +46,9 @@ class Lab2:
         """
         ### REQUIRED CREDIT
         ### Make a new Twist message
+        
         msg = Twist(linear=Vector3(x=linear_speed), angular=Vector3(z=angular_speed))
-
+        print(f"message sending, rot= {angular_speed}")
         ### Publish the message
         self.cmd_pub.publish(msg)
          
@@ -85,7 +86,9 @@ class Lab2:
             # print(type(distance))
             # print(type(distanceTolerance))
         self.send_speed(0.0, 0.0)
-        
+
+    
+    
 
 #ROTATE TO ANGLE DEPENDS ON ROBOT POSE
     def rotate(self, angle: float, aspeed: float):
@@ -105,15 +108,19 @@ class Lab2:
             # Normalizing angle difference to range btw pi and -pi
             #angle_difference = atan2(sin(angle_difference), cos(angle_difference))
             #print(angle_difference)
-            if angle_difference > pi:
+            while angle_difference > pi:
                 angle_difference = angle_difference - 2 * pi
-            elif angle_difference < -pi:
+            while angle_difference < -pi:
                 angle_difference = angle_difference + 2*pi
             #print("ready to rotate")
             
             print(angle_difference)
             if angle_difference <= ang_tol:
+                
+                self.send_speed(0.0,0.0)
+                rospy.sleep(0.5)
                 self.send_speed(0,0)
+                
                 print("reached goal!")
                 break
             else:
@@ -125,9 +132,11 @@ class Lab2:
                 else:
                     self.send_speed(0, -aspeed)
                     print("anti-clockwise")
-                    
+        
         self.send_speed(0,0)
 
+        print("robot should stop now")
+        self.send_speed(0.0,0.0)
         # if abs(self.pth - target_yaw) != ang_tol:
         #     if self.pth - angle > pi:
         #         #self.cmd_pub.publish(Twist(linear=Vector3(x=0.0), angular=Vector3(z=1.0)))
