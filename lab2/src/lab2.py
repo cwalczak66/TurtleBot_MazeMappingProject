@@ -95,23 +95,33 @@ class Lab2:
         :param angular_speed [float] [rad/s] The angular speed.
         """
         ### REQUIRED CREDIT
-        target_yaw = self.pth + angle
-        ang_tol = 0.1
-        angle_difference = target_yaw - self.pth
+        #target_yaw = self.pth + angle
+        ang_tol = 0.5
 
-        # Normalizing angle difference to range btw pi and -pi
-        angle_difference = atan2(sin(angle_difference), cos(angle_difference))
-        
         while not rospy.is_shutdown():
+            angle_difference = angle - self.pth
+            #print(self.pth)
 
+            # Normalizing angle difference to range btw pi and -pi
+            #angle_difference = atan2(sin(angle_difference), cos(angle_difference))
+            #print(angle_difference)
+            if angle_difference > pi:
+                angle_difference = angle_difference - 2 * pi
+            elif angle_difference < -pi:
+                angle_difference = angle_difference + 2*pi
+            #print("ready to rotate")
+            
+            print(angle_difference)
             if angle_difference <= ang_tol:
                 self.send_speed(0,0)
+                print("reached goal!")
+                break
             else:
-            # Normalizing angle difference to range btw pi and -pi
-                if angle_difference > 0:
+                # Normalizing angle difference to range btw pi and -pi
+                if angle_difference > 0:    
                     self.send_speed(0, aspeed )
                     print("clockwise")
-                    print(angle_difference)
+                    
                 else:
                     self.send_speed(0, -aspeed)
                     print("anti-clockwise")
@@ -204,8 +214,8 @@ class Lab2:
         # while True:
         #     self.send_speed(1,1)
        # self.drive(1.0,0)
-        #self.rotate(pi/2,1) 
-        self.drive(10.0, 0.5) 
+        self.rotate( pi/2,.5) 
+       # self.drive(10.0, 0.5) 
         rospy.spin()
         
 
