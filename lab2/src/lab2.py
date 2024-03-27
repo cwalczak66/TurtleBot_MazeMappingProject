@@ -100,14 +100,13 @@ class Lab2:
         :param angular_speed [float] [rad/s] The angular speed.
         """
         ### REQUIRED CREDIT
-        #target_yaw = self.pth + angle
         ang_tol = 0.1
-        rospy.wait_for_message("/odom", Odometry)
+        rospy.wait_for_message("/odom", Odometry) #wait for angle update before execution
         rate = rospy.Rate(10) # Publish rate of 10Hz
+
         while not rospy.is_shutdown():
             angle_difference = (angle - self.pth)% (2* pi)
             print(f'target angle: {angle} current angle: {self.pth} angle difference: {angle_difference}')
-
             # Normalizing angle difference to range btw pi and -pi
             #angle_difference = atan2(sin(angle_difference), cos(angle_difference))
             #print(angle_difference)
@@ -120,36 +119,22 @@ class Lab2:
             #print(angle_difference)
             
             if abs(angle_difference) <= ang_tol:
-                
                 self.send_speed(0.0,0.0)
                 rospy.sleep(0.5)
                 self.send_speed(0,0)
-                
                 print("reached goal!")
                 break
             else:
                 # Normalizing angle difference to range btw pi and -pi
                 if angle_difference > 0:    
-                    self.send_speed(0, aspeed)
-                    #print("clockwise")
-                    
+                    self.send_speed(0, aspeed) #clockwise
                 else:
-                    self.send_speed(0, -aspeed)
-                    #print("anti-clockwise")
+                    self.send_speed(0, -aspeed) #anticlockwise
                 rospy.sleep(0.5)
         
         self.send_speed(0,0)
         print("robot should stop now")
         self.send_speed(0.0,0.0)
-        # if abs(self.pth - target_yaw) != ang_tol:
-        #     if self.pth - angle > pi:
-        #         #self.cmd_pub.publish(Twist(linear=Vector3(x=0.0), angular=Vector3(z=1.0)))
-        #         self.send_speed(0,1)
-        #     else:
-        #         #self.cmd_pub.publish(Twist(linear=Vector3(x=0.0), angular=Vector3(z=-1.0)))
-        #         self.send_speed(0,-1)
-        # else:
-        #     self.send_speed(0,0)
     
 
 
@@ -168,23 +153,13 @@ class Lab2:
         delta_x = target_x - self.py
         angle_to_pose = atan2(delta_y, delta_x)
 
-
-
-
-        #angle_diff = target_angle - self.pth
-
-        #while not rospy.is_shutdown():
-
-
-
         # Rotate to look at target location
-        print("TIME FOR ROTATION ONE!")
         self.rotate(angle_to_pose, 0.5)
         print("rotation 1 complete!")
-        rospy.sleep(0.7)
+        rospy.sleep(0.5)
+
         # Drive to target location
         distance_to_target = abs(sqrt(pow(delta_y, 2 ) + (pow(delta_x, 2))**2))
-        
         self.drive(distance_to_target, 0.5)
         print("Reached target location!")
         rospy.sleep(0.7)
