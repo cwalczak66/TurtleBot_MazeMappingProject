@@ -16,25 +16,24 @@ class Lab2:
         ### REQUIRED CREDIT
         ### Initialize node, name it 'lab2'
         rospy.init_node('Lab2')
-        # TODO
+
         ### Tell ROS that this node publishes Twist messages on the '/cmd_vel' topic
         self.cmd_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
-        # TODO
+
         ### Tell ROS that this node subscribes to Odometry messages on the '/odom' topic
         ### When a message is received, call self.update_odometry
         rospy.Subscriber('/odom', Odometry, self.update_odometry)
-        
-        # TODO
+
         ### Tell ROS that this node subscribes to PoseStamped messages on the '/move_base_simple/goal' topic
         ### When a message is received, call self.go_to
-        # TODO
-        
         rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.go_to)
+
         #self.xpose = PoseStamped.pose #.position.x
         #print(self.xpose)
         self.px = 0
         self.py = 0
         self.kp = 0.1
+        
         # yaw angle
         self.pth = 0  
 
@@ -48,7 +47,6 @@ class Lab2:
         ### Make a new Twist message
         
         msg = Twist(linear=Vector3(x=linear_speed), angular=Vector3(z=angular_speed))
-        #print(f"message sending, rot= {angular_speed} lin= {linear_speed}")
         ### Publish the message
         self.cmd_pub.publish(msg)
          
@@ -66,29 +64,17 @@ class Lab2:
         initialPose_x = self.px
         initialPose_y = self.py
         distanceTolerance = 0.1
-        #Kp = 0.1
-        # initial_pose = [[initialPose_x],[initialPose_y]]
-        # currentPose_x = 1.0
-        # currentPose_y = 1.0
-        # Kp = self.kp
-        #curr_distance = sqrt(pow(self.py - initialPose_y, 2 ) + (pow(self.px - initialPose_x, 2))**2)
         curr_distance = 0.0
-        
         rate = rospy.Rate(10) # Publish rate of 10Hz
         while (not rospy.is_shutdown()) and (abs(distance - curr_distance) >= distanceTolerance):
         # Proportional control
         # Euclidean distance difference - "error"
-            #linear_speed = Kp * distance
             self.send_speed(linear_speed, 0.0)
             rate.sleep()
             curr_distance = abs(sqrt(pow(self.py - initialPose_y, 2 ) + (pow(self.px - initialPose_x, 2))**2))
-            rospy.loginfo(f'remaining distance: {abs(distance - curr_distance)}')
-            #rospy.loginfo()
-            # print(type(distance))
-            # print(type(distanceTolerance))
-            #rospy.sleep(0.5)
+            #rospy.loginfo(f'distance to target: {abs(distance - curr_distance)}')
         self.send_speed(0.0, 0.0)
-        print("reached distance goal")
+        print("reached target distance")
 
     
 
@@ -185,9 +171,6 @@ class Lab2:
         quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
         (roll, pitch, yaw) = euler_from_quaternion(quat_list)
         self.pth = yaw
-        
-        #rospy.loginfo("Hola")
-
 
 
     def smooth_drive(self, distance: float, linear_speed: float):
@@ -204,8 +187,6 @@ class Lab2:
 
 
     def run(self):
-        # while True:
-        #     self.send_speed(1,1)
         #self.drive(1.0,2.0)
         #self.rotate(0.0,0.5) 
         #self.drive(0.6, 0.5) 
