@@ -86,13 +86,13 @@ class Lab2:
         :param angular_speed [float] [rad/s] The angular speed.
         """
         ### REQUIRED CREDIT
-        ang_tol = 0.1
+        ang_tol = 0.08
         rospy.wait_for_message("/odom", Odometry) #wait for angle update before execution
         rate = rospy.Rate(10) # Publish rate of 10Hz
 
         while not rospy.is_shutdown():
             angle_difference = (angle - self.pth)% (2* pi)
-            print(f'target angle: {angle} current angle: {self.pth} angle difference: {angle_difference}')
+            print(f'target angle: {angle * (180/pi)} current angle: {self.pth * (180/pi)} angle difference: {angle_difference * (180/pi)}')
             # Normalizing angle difference to range btw pi and -pi
             #angle_difference = atan2(sin(angle_difference), cos(angle_difference))
             #print(angle_difference)
@@ -137,12 +137,16 @@ class Lab2:
         target_y = msg.pose.position.y 
         delta_y = target_y - self.px
         delta_x = target_x - self.py
-        
+        quat_orig = msg.pose.orientation
+        quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
+        (roll, pitch, yaw) = euler_from_quaternion(quat_list)
+
+        print(f'Final yaw angle = {yaw*(180/pi)}')
         
         angle_to_pose = atan2(delta_y, delta_x)
 
         # Rotate to look at target location
-        self.rotate(angle_to_pose, 0.5)
+        self.rotate(angle_to_pose, 0.3)
         print("rotation 1 complete!")
         rospy.sleep(0.5)
 
@@ -153,7 +157,9 @@ class Lab2:
         rospy.sleep(0.7)
 
         # Rotate to target orientation
-        self.rotate(msg.pose.orientation.z, 0.5)
+        
+
+        self.rotate(yaw, 0.3)
         print("Reached target pose!")
 
 
@@ -194,5 +200,5 @@ class Lab2:
         
 
 if __name__ == '__main__':
-    
+    Lab2().run()
     
