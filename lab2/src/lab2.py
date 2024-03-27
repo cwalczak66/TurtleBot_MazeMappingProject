@@ -146,11 +146,13 @@ class Lab2:
         :param msg [PoseStamped] The target pose.
         """
         ### REQUIRED CREDIT
-        print(msg.pose.position)
+        #print(msg.pose.position)
         target_x = msg.pose.position.x
         target_y = msg.pose.position.y 
         delta_y = target_y - self.px
         delta_x = target_x - self.py
+        
+        
         angle_to_pose = atan2(delta_y, delta_x)
 
         # Rotate to look at target location
