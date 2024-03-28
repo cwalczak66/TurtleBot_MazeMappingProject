@@ -154,7 +154,7 @@ class Lab2:
         print("Reached target pose!")
 
 
-
+# UPDATES ROBOT CURRENT POSITION AND ORIENTATION SO OTHER FUNCTIONS KNOW WHERE TB IS IN REAL TIME
     def update_odometry(self, msg: Odometry):
         """
         Updates the current pose of the robot.
@@ -169,7 +169,7 @@ class Lab2:
         (roll, pitch, yaw) = euler_from_quaternion(quat_list)
         self.pth = yaw
 
-
+# TO BE IMPLEMENTED
     def smooth_drive(self, distance: float, linear_speed: float):
         """
         Drives the robot in a straight line by changing the actual speed smoothly.
