@@ -37,6 +37,7 @@ class Lab2:
         # yaw angle
         self.pth = 0  
 
+#SENDS DESIRED MOTOR SPEED AS A TWIST MSG
     def send_speed(self, linear_speed: float, angular_speed: float):
         """
         Sends the speeds to the motors.
@@ -50,7 +51,7 @@ class Lab2:
         ### Publish the message
         self.cmd_pub.publish(msg)
          
-        
+#DRIVE TELLS THE TURTLEBOT TO GO STRAIGHT FOR A SPECIFIED DISTANCE AND SPEED
     def drive(self, distance: float, linear_speed: float):
         """
         Drives the robot in a straight line.
@@ -67,7 +68,6 @@ class Lab2:
         curr_distance = 0.0
         rate = rospy.Rate(10) # Publish rate of 10Hz
         while (not rospy.is_shutdown()) and (abs(distance - curr_distance) >= distanceTolerance):
-        # Proportional control
         # Euclidean distance difference - "error"
             self.send_speed(linear_speed, 0.0)
             rate.sleep()
@@ -78,7 +78,7 @@ class Lab2:
 
     
 
-#ROTATE TO ANGLE DEPENDS ON ROBOT POSE
+#ROTATE TELLS TURTLEBOT TO ROTATE TO DESIRED ANGLE
     def rotate(self, angle: float, aspeed: float):
         """
         Rotates the robot around the body center by the given angle.
@@ -100,9 +100,7 @@ class Lab2:
                 angle_difference = angle_difference - 2 * pi
             while angle_difference < -pi:
                 angle_difference = angle_difference + 2*pi
-            #print("ready to rotate")
             rate.sleep()
-            #print(angle_difference)
             
             if abs(angle_difference) <= ang_tol:
                 self.send_speed(0.0,0.0)
@@ -123,8 +121,7 @@ class Lab2:
         self.send_speed(0.0,0.0)
     
 
-
-
+#GO_TO WAITS FOR POSESTAMPED MESSAGE AND THEN MOVES TO DESIRED XYZ POSITION AND FINAL ROTATION
     def go_to(self, msg: PoseStamped):
         """
         Calls rotate(), drive(), and rotate() to attain a given pose.
@@ -132,7 +129,6 @@ class Lab2:
         :param msg [PoseStamped] The target pose.
         """
         ### REQUIRED CREDIT
-        #print(msg.pose.position)
         target_x = msg.pose.position.x
         target_y = msg.pose.position.y 
         delta_y = target_y - self.px
@@ -140,9 +136,6 @@ class Lab2:
         quat_orig = msg.pose.orientation
         quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
         (roll, pitch, yaw) = euler_from_quaternion(quat_list)
-
-        print(f'Final yaw angle = {yaw*(180/pi)}')
-        
         angle_to_pose = atan2(delta_y, delta_x)
 
         # Rotate to look at target location
@@ -157,8 +150,6 @@ class Lab2:
         rospy.sleep(0.7)
 
         # Rotate to target orientation
-        
-
         self.rotate(yaw, 0.3)
         print("Reached target pose!")
 
