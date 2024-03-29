@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-import math
 import rospy
 from nav_msgs.srv import GetPlan, GetMap
 from nav_msgs.msg import GridCells, OccupancyGrid, Path
 from geometry_msgs.msg import Point, Pose, PoseStamped
+from math import sqrt
 
 
 
@@ -22,14 +22,18 @@ class PathPlanner:
         ## Create a new service called "plan_path" that accepts messages of
         ## type GetPlan and calls self.plan_path() when a message is received
         # TODO
+
         ## Create a publisher for the C-space (the enlarged occupancy grid)
         ## The topic is "/path_planner/cspace", the message type is GridCells
-        # TODO
+
+        self.cspace_pub = rospy.Publisher('/path_planner/cspace', GridCells, queue_size=10)
+
         ## Create publishers for A* (expanded cells, frontier, ...)
         ## Choose a the topic names, the message type is GridCells
-        # TODO
+        self.astar_pub = rospy.Publisher('/path_planner/astar', GridCells, queue_size=10)
+
         ## Initialize the request counter
-        # TODO
+        self.request_counter = 0
         ## Sleep to allow roscore to do some housekeeping
         rospy.sleep(1.0)
         rospy.loginfo("Path planner node ready")
@@ -44,7 +48,10 @@ class PathPlanner:
         :return  [int] The index.
         """
         ### REQUIRED CREDIT
-        pass
+        map_width = mapdata.info.width
+        index = p[1]*map_width + p[0]
+
+        return index
 
 
 
@@ -57,7 +64,15 @@ class PathPlanner:
         :return   [float]          distance.
         """
         ### REQUIRED CREDIT
-        pass
+        initial_point_x = p1[0]
+        initial_point_y = p1[1]
+        final_point_x = p2[0]
+        final_point_y = p2[1]
+
+
+        euclid_distance = abs(sqrt(pow(final_point_y - initial_point_y, 2 ) + (pow(final_point_x - initial_point_x, 2))**2))
+
+        return euclid_distance
         
 
 
@@ -70,9 +85,15 @@ class PathPlanner:
         :return        [Point]         The position in the world.
         """
         ### REQUIRED CREDIT
-        pass
+        map_resolution = mapdata.info.resolution
 
+        world_coordinate_x = ((p[0] + 0.5) * map_resolution) + mapdata.info.origin.position.x
+        world_coordinate_y = ((p[1] + 0.5) * map_resolution) + mapdata.info.origin.position.y
 
+        Point.x = world_coordinate_x
+        Point.y = world_coordinate_y
+        
+        
         
     @staticmethod
     def world_to_grid(mapdata: OccupancyGrid, wp: Point) -> tuple[int, int]:
@@ -83,7 +104,17 @@ class PathPlanner:
         :return        [(int,int)]     The cell position as a tuple.
         """
         ### REQUIRED CREDIT
-        pass
+        map_resolution = mapdata.info.resolution
+        world_origin_x = mapdata.info.origin.position.x
+        world_origin_y = mapdata.info.origin.position.y
+
+        cell_coordinate_x = int((Point.x - world_origin_x) / map_resolution)
+        cell_coordinate_y = int((Point.y - world_origin_y) / map_resolution)
+
+        cell_position = tuple(cell_coordinate_x, cell_coordinate_y)
+
+        return cell_position
+        
 
 
         
