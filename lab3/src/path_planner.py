@@ -129,10 +129,12 @@ class PathPlanner:
         """
         
         ### REQUIRED CREDIT
+        path_list = []
         for cell_coordinates in path:
-            world_coordinates = grid_to_world(mapdata, cell_coordinates)
-            PoseStamped.append(world_coordinates)
-        pass
+            world_coordinates = PathPlanner.grid_to_world(mapdata, cell_coordinates) #use class name to call static methods
+            path_list.append(world_coordinates)
+
+        return path_list
         
     
 
@@ -147,9 +149,33 @@ class PathPlanner:
         :return        [bool]          True if the cell is walkable, False otherwise
         """
         ### REQUIRED CREDIT
-        pass
+        map_boundary_x = mapdata.info.width # no.of cells
+        map_boundary_y = mapdata.info.height # no.of cells
+        map_origin_x = mapdata.info.origin.position.x
+        map_origin_y = mapdata.info.origin.position.y
+        cell_walkable = True
+        cell_free == True
 
-               
+#        if (p[0] < map_origin_x or p[0] >= map_origin_x + map_boundary_x or
+#            p[1] < map_origin_y or p[1] >= map_origin_y + map_boundary_y):
+#           return cell_walkable == False
+        
+        if p[0] not in range(map_origin_x, map_boundary_x) and p[1] in range(map_origin_y, map_boundary_y):
+            return cell_walkable == False
+        else:
+            for x in mapdata.data:
+                 cell_index = (p[1] - map_origin_y) * map_boundary_x + (p[0] - map_origin_x)
+                 x = mapdata.data[cell_index]
+            if x >= 50 or x == -1:
+                cell_free = False
+                cell_walkable = False
+            else:
+                cell_free = True
+                cell_walkable = True
+                
+        return cell_walkable
+
+
 
     @staticmethod
     def neighbors_of_4(mapdata: OccupancyGrid, p: tuple[int, int]) -> list[tuple[int, int]]:
