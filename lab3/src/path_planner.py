@@ -109,8 +109,8 @@ class PathPlanner:
         world_origin_x = mapdata.info.origin.position.x
         world_origin_y = mapdata.info.origin.position.y
 
-        cell_coordinate_x = int((Point.x - world_origin_x) / map_resolution)
-        cell_coordinate_y = int((Point.y - world_origin_y) / map_resolution)
+        cell_coordinate_x = int((wp.x - world_origin_x) / map_resolution)
+        cell_coordinate_y = int((wp.y - world_origin_y) / map_resolution)
 
         cell_position = tuple(cell_coordinate_x, cell_coordinate_y)
 
@@ -127,9 +127,13 @@ class PathPlanner:
         :param  path   [[(int,int)]]   The path as a list of tuples (cell coordinates).
         :return        [[PoseStamped]] The path as a list of PoseStamped (world coordinates).
         """
+        
         ### REQUIRED CREDIT
+        for cell_coordinates in path:
+            world_coordinates = grid_to_world(mapdata, cell_coordinates)
+            PoseStamped.append(world_coordinates)
         pass
-
+        
     
 
     @staticmethod
