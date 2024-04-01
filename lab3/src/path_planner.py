@@ -161,6 +161,7 @@ class PathPlanner:
 #           return cell_walkable == False
         
         if p[0] not in range(map_origin_x, map_boundary_x) and p[1] not in range(map_origin_y, map_boundary_y):
+            print("cell is walkable")
             return cell_walkable == False
         else:
             for x in mapdata.data:
@@ -170,12 +171,19 @@ class PathPlanner:
                   
             if x >= 50 or x == -1:
                 cell_free = False
+                print("cell not free")
+            
+            if cell_free == False:
                 cell_walkable = False
+                print("cell is not walkable")
             else:
                 cell_free = True
                 cell_walkable = True
-                
+                print("cell is walkable")
+
+        print("cell is walkable")     
         return cell_walkable
+        
 
 
 
