@@ -6,7 +6,7 @@ from nav_msgs.srv import GetPlan, GetMap
 from nav_msgs.msg import GridCells, OccupancyGrid, Path
 from geometry_msgs.msg import Point, Pose, PoseStamped
 from math import sqrt
-
+from priority_queue import PriorityQueue
 
 
 
@@ -23,7 +23,7 @@ class PathPlanner:
         rospy.init_node("path_planner")
         ## Create a new service called "plan_path" that accepts messages of
         ## type GetPlan and calls self.plan_path() when a message is received
-        self.path_plan_service = rospy.Service('path_planner', GetPlan, self.plan_path())
+        self.path_plan_service = rospy.Service('path_planner', GetPlan, self.plan_path(GetPlan))
 
         ## Create a publisher for the C-space (the enlarged occupancy grid)
         ## The topic is "/path_planner/cspace", the message type is GridCells
@@ -33,6 +33,10 @@ class PathPlanner:
         ## Create publishers for A* (expanded cells, frontier, ...)
         ## Choose a the topic names, the message type is GridCells
         self.astar_pub = rospy.Publisher('/path_planner/astar', GridCells, queue_size=10)
+
+
+        #waiting for a 2d navgoal message
+        #rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.)
 
         ## Initialize the request counter
         self.request_counter = 0
@@ -293,11 +297,60 @@ class PathPlanner:
         ## Return the C-space
         pass
 
+    def heuristic(self, a: tuple[int,int], b: tuple[int,int]) -> int:
+        ax = a[0]
+        ay = a[1]
+        bx = b[0]
+        by = b[1]
+
+        return sqrt(pow(ax - bx, 2) + pow(ay - by, 2))
+    
+    def cost(self, a: tuple[int,int], b: tuple[int,int]) -> int:
+
+        ax = a[0]
+        ay = a[1]
+        bx = b[0]
+        by = b[1]
+
+        return abs(ax-bx) + abs(ay-by)
+
 
     
     def a_star(self, mapdata: OccupancyGrid, start: tuple[int, int], goal: tuple[int, int]) -> list[tuple[int, int]]:
         ### REQUIRED CREDIT
         rospy.loginfo("Executing A* from (%d,%d) to (%d,%d)" % (start[0], start[1], goal[0], goal[1]))
+        frontier = PriorityQueue()
+        frontier.put(start, 0)
+        came_from = {}
+        cost_so_far = {}
+        came_from[start] = None
+        cost_so_far[start] = 0
+        
+        while not frontier.empty():
+            current = frontier.get()
+            
+            if current == goal:
+                break
+            
+            for next in self.neighbors_of_8:
+                new_cost = cost_so_far[current] + self.cost(current, next)
+                if next not in cost_so_far or new_cost < cost_so_far[next]:
+                    cost_so_far[next] = new_cost
+                    priority = new_cost + self.heuristic(next, goal)
+                    frontier.put(next, priority)
+                    came_from[next] = current
+        
+        return came_from, cost_so_far
+        
+
+            
+
+            
+            
+
+
+
+
 
 
     
@@ -352,6 +405,7 @@ class PathPlanner:
         """
         Runs the node until Ctrl-C is pressed.
         """
+
         rospy.spin()
 
 
