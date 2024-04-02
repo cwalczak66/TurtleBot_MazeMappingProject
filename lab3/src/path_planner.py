@@ -204,17 +204,29 @@ class PathPlanner:
         ## Return the C-space
         pass
 
+    def heuristic(self, a: tuple[int,int], b: tuple[int,int]) -> int:
+        ax = a[0]
+        ay = a[1]
+        bx = b[0]
+        by = b[1]
+
+        return abs(ax-bx) + abs(ay-by)
+
 
     
     def a_star(self, mapdata: OccupancyGrid, start: tuple[int, int], goal: tuple[int, int]) -> list[tuple[int, int]]:
         ### REQUIRED CREDIT
         rospy.loginfo("Executing A* from (%d,%d) to (%d,%d)" % (start[0], start[1], goal[0], goal[1]))
+
+        open_set = PriorityQueue()
+        closed_set = set()
+        
+
+        # add start tuple to open list
+        open_set.put(start, 0)
+
         frontier = PriorityQueue()
         frontier.put(start, 0)
-        came_from = {}
-        cost_so_far = {}
-        came_from[start] = None
-        cost_so_far[start] = 0
 
         while not frontier.empty():
             current = frontier.get()
