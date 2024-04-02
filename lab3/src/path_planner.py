@@ -34,10 +34,6 @@ class PathPlanner:
         ## Choose a the topic names, the message type is GridCells
         self.astar_pub = rospy.Publisher('/path_planner/astar', GridCells, queue_size=10)
 
-
-        #waiting for a 2d navgoal message
-        #rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.)
-
         ## Initialize the request counter
         self.request_counter = 0
         ## Sleep to allow roscore to do some housekeeping
@@ -136,7 +132,9 @@ class PathPlanner:
         path_list = []
         for cell_coordinates in path:
             world_coordinates = PathPlanner.grid_to_world(mapdata, cell_coordinates) #use class name to call static methods
-            path_list.append(world_coordinates)
+            world_point = Point(world_coordinates[0], world_coordinates[1])
+            world_pose = Pose(world_point)
+            path_list.append(world_pose)
 
         return path_list
         
@@ -276,8 +274,16 @@ class PathPlanner:
         """
         ### REQUIRED CREDIT
         rospy.loginfo("Requesting the map")
+        try:    
+            rospy.wait_for_service('/map')
 
+            get_map = rospy.ServiceProxy('/map', OccupancyGrid)
 
+            return get_map
+
+        except rospy.ServiceException as e:
+         print("Service call failed: %s"%e)
+        
 
     def calc_cspace(self, mapdata: OccupancyGrid, padding: int) -> OccupancyGrid:
         """
@@ -303,7 +309,7 @@ class PathPlanner:
         bx = b[0]
         by = b[1]
 
-        return sqrt(pow(ax - bx, 2) + pow(ay - by, 2))
+        return sqrt(pow(ax - bx, 2) + pow(ay - by, 2)) 
     
     def cost(self, a: tuple[int,int], b: tuple[int,int]) -> int:
 
@@ -312,7 +318,7 @@ class PathPlanner:
         bx = b[0]
         by = b[1]
 
-        return abs(ax-bx) + abs(ay-by)
+        return abs(ax-bx) + abs(ay-by) #Manhattan distance
 
 
     
@@ -342,17 +348,6 @@ class PathPlanner:
         
         return came_from, cost_so_far
         
-
-            
-
-            
-            
-
-
-
-
-
-
     
     @staticmethod
     def optimize_path(path: list[tuple[int, int]]) -> list[tuple[int, int]]:
@@ -405,6 +400,13 @@ class PathPlanner:
         """
         Runs the node until Ctrl-C is pressed.
         """
+        self.grid_to_index()
+        self.euclidean_distance()
+        self.grid_to_world()
+        self.is_cell_walkable()
+        self.neighbors_of_4()
+        self.neighbors_of_8()
+        self.a_star()
 
         rospy.spin()
 
