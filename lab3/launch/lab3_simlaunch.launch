@@ -1,0 +1,17 @@
+<launch>
+<!-- <include file ="$(find turtlebot3_gazebo)/launch/turtlebot3_empty_world.launch"/>
+<include file ="$(find turtlebot3_gazebo)/launch/turtlebot3_gazebo_rviz.launch"/> -->
+
+<!-- <node name="gazebo" pkg="turtlebot3_gazebo" type="turtlebot3_empty_world.launch"/>
+<node name="gazebo" pkg="turtlebot3_gazebo" type="turtlebot3_gazebo_rviz.launch"/> 
+   -->
+<!-- <include file ="$(find lab3)/launch/turtlebot3_gazebo_rviz.launch"/> -->
+
+<node name= "rviz" pkg="rviz" type="rviz"  
+     args="-d $(find lab3)/rviz/RBE3002_lab3.rviz"/> 
+<node name="lab3" pkg="lab3" type="path_planner.py"/>
+<node name="static_transform_publisher" pkg="tf" type="static_transform_publisher" args= "0 0 0 0 0 0 /map /odom 100" respawn="false" output="screen" />
+
+<!-- <param name="turtle" type="string" value="turtle1" /> -->
+
+</launch>
