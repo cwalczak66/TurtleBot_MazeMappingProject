@@ -3,7 +3,7 @@
 from __future__ import annotations
 import rospy
 from nav_msgs.srv import GetPlan, GetMap
-from nav_msgs.msg import GridCells, OccupancyGrid, Path
+from nav_msgs.msg import GridCells, Path
 from geometry_msgs.msg import Point, Pose, PoseStamped
 from math import sqrt
 from priority_queue import PriorityQueue
@@ -23,22 +23,24 @@ class PathPlanner:
         rospy.init_node("path_planner")
         ## Create a new service called "plan_path" that accepts messages of
         ## type GetPlan and calls self.plan_path() when a message is received
-        self.path_plan_service = rospy.Service('path_planner', GetPlan, self.plan_path(GetPlan))
+        self.path_plan_service = rospy.Service('plan_path', GetPlan, self.plan_path_handler(GetPlan))
 
         ## Create a publisher for the C-space (the enlarged occupancy grid)
         ## The topic is "/path_planner/cspace", the message type is GridCells
 
-        self.cspace_pub = rospy.Publisher('/path_planner/cspace', GridCells, queue_size=10)
+        self.cspace_pub = rospy.Publisher('/plan_path/cspace', GridCells, queue_size=10)
 
         ## Create publishers for A* (expanded cells, frontier, ...)
         ## Choose a the topic names, the message type is GridCells
-        self.astar_pub = rospy.Publisher('/path_planner/astar', GridCells, queue_size=10)
+        self.astar_pub = rospy.Publisher('/plan_path/astar', GridCells, queue_size=10)
 
         ## Initialize the request counter
         self.request_counter = 0
         ## Sleep to allow roscore to do some housekeeping
         rospy.sleep(1.0)
         rospy.loginfo("Path planner node ready")
+
+        
 
     @staticmethod
     def grid_to_index(mapdata: OccupancyGrid, p: tuple[int, int]) -> int:
@@ -297,12 +299,13 @@ class PathPlanner:
         """
         ### REQUIRED CREDIT
         rospy.loginfo("Requesting the map")
-        rospy.wait_for_service('/map')
+        rospy.wait_for_service('/static_map')
 
         try:  
-            get_map = rospy.ServiceProxy('/map', OccupancyGrid)
+            get_map = rospy.ServiceProxy('/static_map', GetMap)
 
-            return get_map.call('/GetMap')
+            return get_map().map
+        
 
         except rospy.ServiceException as e:
          print("Service call failed: %s"%e)
@@ -414,7 +417,7 @@ class PathPlanner:
 
 
         
-    def plan_path(self, msg):
+    def plan_path_handler(self, msg):
         """
         Plans a path between the start and goal locations in the requested.
         Internally uses A* to plan the optimal path.
@@ -422,12 +425,17 @@ class PathPlanner:
         """
         ## Request the map
         ## In case of error, return an empty path
+        #rospy.wait_for_service('map_service')
+        print("In Plan_path!")
         mapdata = PathPlanner.request_map()
         if mapdata is None:
             return Path()
         ## Calculate the C-space and publish it
-        cspacedata = self.calc_cspace(mapdata, 1)
+        print("ok made it through that")
+        #cspacedata = self.calc_cspace(mapdata, 1)
         ## Execute A*
+
+        
         start = PathPlanner.world_to_grid(mapdata, msg.start.pose.position)
         goal  = PathPlanner.world_to_grid(mapdata, msg.goal.pose.position)
         path  = self.a_star(cspacedata, start, goal)
