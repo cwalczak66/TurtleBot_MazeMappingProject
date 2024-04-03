@@ -162,7 +162,7 @@ class PathPlanner:
 #            p[1] < map_origin_y or p[1] >= map_origin_y + map_boundary_y):
 #           return cell_walkable == False
         
-        if p[0] not in range(map_origin_x, map_boundary_x) and p[1] not in range(map_origin_y, map_boundary_y):
+        if p[0] not in range(map_origin_x, map_boundary_x) or p[1] not in range(map_origin_y, map_boundary_y):
             print("cell is not walkable")
             return cell_walkable == False
         else:
@@ -205,21 +205,23 @@ class PathPlanner:
         map_origin_y = mapdata.info.origin.position.y
         cell_neighbours4 = []
 
-        while p[0] in range(map_origin_x, map_boundary_x) and p[1] in range(map_origin_y, map_boundary_y):
-            print("cell within grid boundary")
-            if PathPlanner.is_cell_walkable(mapdata, p) == True:
-                print("cell_walkable")
-                cell_edge_neighbour_top = tuple(p[0], p[1]+1)
-                cell_neighbours4.append(cell_edge_neighbour_top)
+        # if PathPlanner.is_cell_walkable(mapdata, p) == True:
+        #     print("cell_walkable")
+        cell_edge_neighbour_top = tuple(p[0], p[1]+1)
+        if PathPlanner.is_cell_walkable(mapdata, cell_edge_neighbour_top):
+            cell_neighbours4.append(cell_edge_neighbour_top)
 
-                cell_edge_neighbour_bottom = tuple(p[0], p[1]-1)
-                cell_neighbours4.append(cell_edge_neighbour_bottom)
+        cell_edge_neighbour_bottom = tuple(p[0], p[1]-1)
+        if PathPlanner.is_cell_walkable(mapdata, cell_edge_neighbour_bottom):
+            cell_neighbours4.append(cell_edge_neighbour_bottom)
 
-                cell_edge_neighbour_right = tuple(p[0]+1, p[1])
-                cell_neighbours4.append(cell_edge_neighbour_right)
+        cell_edge_neighbour_right = tuple(p[0]+1, p[1])
+        if PathPlanner.is_cell_walkable(mapdata, cell_edge_neighbour_right):
+            cell_neighbours4.append(cell_edge_neighbour_right)
 
-                cell_edge_neighbour_left = tuple(p[0]-1, p[1])
-                cell_neighbours4.append(cell_edge_neighbour_left)
+        cell_edge_neighbour_left = tuple(p[0]-1, p[1])
+        if PathPlanner.is_cell_walkable(mapdata, cell_edge_neighbour_left):
+            cell_neighbours4.append(cell_edge_neighbour_left)
 
         return cell_neighbours4
 
@@ -243,22 +245,43 @@ class PathPlanner:
     #    cell_neighbours8 = []
         cell_neighbours8 = PathPlanner.neighbors_of_4(mapdata,p)
 
-        while p[0] in range(map_origin_x, map_boundary_x) and p[1] in range(map_origin_y, map_boundary_y):
-            print("cell within grid boundary")
-            if PathPlanner.is_cell_walkable(mapdata, p) == True:
-                print("cell_walkable")
-                for neighbour in cell_neighbours8:
-                    cell_topRightcorner = tuple(neighbour[0][1]+1, neighbour[0][1])
-                    cell_neighbours8.append(cell_topRightcorner)
+        
 
-                    cell_topLeftcorner = tuple(neighbour[0][1]-1, neighbour[0][1])
-                    cell_neighbours8.append(cell_topLeftcorner)
+        # if PathPlanner.is_cell_walkable(mapdata, p) == True:
+        #     print("cell_walkable")
+        """ for neighbour in cell_neighbours8:
+            cell_topRightcorner = tuple(neighbour[0][1]+1, neighbour[0][1])
+            if PathPlanner.is_cell_walkable(mapdata, cell_topRightcorner):
+                cell_neighbours8.append(cell_topRightcorner)
 
-                    cell_bottomRightcorner = tuple(neighbour[1][1]+1, neighbour[1][1])
-                    cell_neighbours8.append(cell_bottomRightcorner)
+            cell_topLeftcorner = tuple(neighbour[0][1]-1, neighbour[0][1])
+            if PathPlanner.is_cell_walkable(mapdata, cell_topLeftcorner):
+                cell_neighbours8.append(cell_topLeftcorner)
 
-                    cell_bottomLeftcorner = tuple(neighbour[1][1]-1, neighbour[1][1])
-                    cell_neighbours8.append(cell_bottomLeftcorner)
+            cell_bottomRightcorner = tuple(neighbour[1][1]+1, neighbour[1][1])
+            if PathPlanner.is_cell_walkable(mapdata, cell_bottomRightcorner):
+                cell_neighbours8.append(cell_bottomRightcorner)
+
+            cell_bottomLeftcorner = tuple(neighbour[1][1]-1, neighbour[1][1])
+            if PathPlanner.is_cell_walkable(mapdata, cell_bottomLeftcorner):
+                cell_neighbours8.append(cell_bottomLeftcorner) """
+        
+      
+        cell_topRightcorner = tuple(cell_neighbours8[0][0]+1, cell_neighbours8[0][1])
+        if PathPlanner.is_cell_walkable(mapdata, cell_topRightcorner):
+            cell_neighbours8.append(cell_topRightcorner)
+
+        cell_topLeftcorner = tuple(cell_neighbours8[0][0]-1, cell_neighbours8[0][1])
+        if PathPlanner.is_cell_walkable(mapdata, cell_topLeftcorner):
+            cell_neighbours8.append(cell_topLeftcorner)
+
+        cell_bottomRightcorner = tuple(cell_neighbours8[1][0]+1, cell_neighbours8[1][1])
+        if PathPlanner.is_cell_walkable(mapdata, cell_bottomRightcorner):
+            cell_neighbours8.append(cell_bottomRightcorner)
+
+        cell_bottomLeftcorner = tuple(cell_neighbours8[1][0]-1, cell_neighbours8[1][1])
+        if PathPlanner.is_cell_walkable(mapdata, cell_bottomLeftcorner):
+            cell_neighbours8.append(cell_bottomLeftcorner)
 
         return cell_neighbours8
 
@@ -274,12 +297,12 @@ class PathPlanner:
         """
         ### REQUIRED CREDIT
         rospy.loginfo("Requesting the map")
-        try:    
-            rospy.wait_for_service('/map')
+        rospy.wait_for_service('/map')
 
+        try:  
             get_map = rospy.ServiceProxy('/map', OccupancyGrid)
 
-            return get_map
+            return get_map.call('/GetMap')
 
         except rospy.ServiceException as e:
          print("Service call failed: %s"%e)
@@ -297,11 +320,29 @@ class PathPlanner:
         rospy.loginfo("Calculating C-Space")
         ## Go through each cell in the occupancy grid
         ## Inflate the obstacles where necessary
-        # TODO
         ## Create a GridCells message and publish it
-        # TODO
         ## Return the C-space
-        pass
+
+        map_width = mapdata.info.width
+        new_mapData = mapdata
+
+
+    #    for pad in range(1, padding):
+        for occupancy in mapdata.data:
+            if occupancy > 50: # Identifying any value above 50 in the occupancy grid as obstacle
+                cell_index = mapdata.data.index(occupancy)
+                cell_coordinate_y = int(cell_index / map_width)
+                cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
+                cell_coordinate = tuple(cell_coordinate_x, cell_coordinate_y)
+                for thick in PathPlanner.neighbors_of_8(mapdata, cell_coordinate):
+                    new_mapData.data[PathPlanner.grid_to_index(new_mapData, thick)] == 100 # increasing the cell thickness by 100 (1 cell)
+        mapdata = new_mapData
+
+        resolution = new_mapData.info.resolution
+        grid_cells_message = GridCells(resolution, resolution, new_mapData.data)
+        self.cspace_pub.publish(grid_cells_message)
+        ## Return the C-space
+        return new_mapData
 
     def heuristic(self, a: tuple[int,int], b: tuple[int,int]) -> int:
         ax = a[0]
@@ -309,7 +350,7 @@ class PathPlanner:
         bx = b[0]
         by = b[1]
 
-        return sqrt(pow(ax - bx, 2) + pow(ay - by, 2)) 
+        return sqrt(pow(ax - bx, 2) + pow(ay - by, 2)) #Euclidean distance
     
     def cost(self, a: tuple[int,int], b: tuple[int,int]) -> int:
 
