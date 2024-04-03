@@ -334,6 +334,7 @@ class PathPlanner:
                 cell_coordinate_y = int(cell_index / map_width)
                 cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
                 cell_coordinate = tuple(cell_coordinate_x, cell_coordinate_y)
+                print(cell_coordinate)
                 for thick in PathPlanner.neighbors_of_8(mapdata, cell_coordinate):
                     new_mapData.data[PathPlanner.grid_to_index(new_mapData, thick)] == 100 # increasing the cell thickness by 100 (1 cell)
         mapdata = new_mapData
