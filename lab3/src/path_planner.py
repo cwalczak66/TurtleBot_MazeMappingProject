@@ -38,7 +38,6 @@ class PathPlanner:
         # Publisher for visualizing grid cells visited
         self.cells_visited_astar = rospy.Publisher('/plan_path/cell_visited_astar', GridCells, queue_size=10)
 
-        self.update_color_pub = rospy.Publisher('/visualization_msgs', MarkerArray, queue_size=10)
 
         ## Initialize the request counter
         self.request_counter = 0
@@ -183,17 +182,17 @@ class PathPlanner:
                   
             if value >= 50 or value == -1:
                 cell_free = False
-                print("cell not free")
+                #print("cell not free")
             
             if cell_free == False:
                 cell_walkable = False
-                print("cell is not walkable")
+                #print("cell is not walkable")
             else:
                 cell_free = True
                 cell_walkable = True
-                print("cell is walkable")
+                #print("cell is walkable")
 
-        print("cell is walkable")     
+        #print("cell is walkable")     
         return cell_walkable
         
 
@@ -233,8 +232,7 @@ class PathPlanner:
         if PathPlanner.is_cell_walkable(mapdata, cell_edge_neighbour_left):
             cell_neighbours4.append(cell_edge_neighbour_left)
         
-        rospy.loginfo(cell_neighbours4)
-
+       
         return cell_neighbours4
 
 
@@ -256,24 +254,46 @@ class PathPlanner:
 
     #    cell_neighbours8 = []
         cell_neighbours8 = PathPlanner.neighbors_of_4(mapdata,p)
-        rospy.loginfo(cell_neighbours8)
+        
       
-        cell_topRightcorner = (cell_neighbours8[0][0]+1, cell_neighbours8[0][1])
+        # cell_topRightcorner = (cell_neighbours8[0][0]+1, cell_neighbours8[0][1])
+        # if PathPlanner.is_cell_walkable(mapdata, cell_topRightcorner):
+            
+        #     cell_neighbours8.append(cell_topRightcorner)
+
+        # cell_topLeftcorner = (cell_neighbours8[0][0]-1, cell_neighbours8[0][1])
+        # if PathPlanner.is_cell_walkable(mapdata, cell_topLeftcorner):
+        #     cell_neighbours8.append(cell_topLeftcorner)
+
+        # cell_bottomRightcorner = (cell_neighbours8[1][0]+1, cell_neighbours8[1][1])
+        # if PathPlanner.is_cell_walkable(mapdata, cell_bottomRightcorner):
+        #     cell_neighbours8.append(cell_bottomRightcorner)
+
+        # cell_bottomLeftcorner = (cell_neighbours8[1][0]-1, cell_neighbours8[1][1])
+        # if PathPlanner.is_cell_walkable(mapdata, cell_bottomLeftcorner):
+        #     cell_neighbours8.append(cell_bottomLeftcorner)
+
+        
+
+
+        cell_topRightcorner = (p[0]+1, p[1]+1)
         if PathPlanner.is_cell_walkable(mapdata, cell_topRightcorner):
             
             cell_neighbours8.append(cell_topRightcorner)
 
-        cell_topLeftcorner = (cell_neighbours8[0][0]-1, cell_neighbours8[0][1])
+        cell_topLeftcorner = (p[0]-1, p[1]+1)
         if PathPlanner.is_cell_walkable(mapdata, cell_topLeftcorner):
             cell_neighbours8.append(cell_topLeftcorner)
 
-        cell_bottomRightcorner = (cell_neighbours8[1][0]+1, cell_neighbours8[1][1])
+        cell_bottomRightcorner = (p[0]+1, p[1]-1)
         if PathPlanner.is_cell_walkable(mapdata, cell_bottomRightcorner):
             cell_neighbours8.append(cell_bottomRightcorner)
 
-        cell_bottomLeftcorner = (cell_neighbours8[1][0]-1, cell_neighbours8[1][1])
+        cell_bottomLeftcorner = (p[0]-1, p[1]-1)
         if PathPlanner.is_cell_walkable(mapdata, cell_bottomLeftcorner):
             cell_neighbours8.append(cell_bottomLeftcorner)
+
+        rospy.loginfo(cell_neighbours8)
 
         return cell_neighbours8
 
@@ -357,38 +377,6 @@ class PathPlanner:
 
     def reconstruct_path(self, mapdata: OccupancyGrid, came_from: list[tuple[int,int]], start: tuple[int, int], goal: tuple[int, int]) -> list[tuple[int, int]]:
 
-
-
-        # Define grid cell properties
-        cell_size = mapdata.info.resolution  # Size of each cell
-
-        cell_color = [1.0, 0.0, 0.0]  # Default color for cells
-        
-        # Create MarkerArray message
-        marker_array_msg = MarkerArray()
-
-        marker = Marker()
-        marker.header.frame_id = "map"
-        marker.type = Marker.CUBE
-        marker.action = Marker.ADD
-        marker.pose.position.x = goal[0]
-        marker.pose.position.y = goal[1]
-        marker.pose.position.z = 0
-        marker.pose.orientation.w = 1
-        marker.scale.x = cell_size
-        marker.scale.y = cell_size
-        marker.color.a = 1.0  # Alpha
-        marker.color.r = 1.0  # Red
-        marker.color.g = 0.0  # Green
-        marker.color.b = 0.0  # Blue
-
-        marker_array_msg.markers.append(marker)
-        self.update_color_pub.publish(marker_array_msg)
-
-        rospy.loginfo(marker_array_msg)
-        
-
-
         current = goal
         path = []
         if goal not in came_from: # no path was found
@@ -400,9 +388,12 @@ class PathPlanner:
         path.reverse() # optional
         return path
     
+    
+    
     def a_star(self, mapdata: OccupancyGrid, start: tuple[int, int], goal: tuple[int, int]) -> list[tuple[int, int]]:
         ### REQUIRED CREDIT
         rospy.loginfo("Executing A* from (%d,%d) to (%d,%d)" % (start[0], start[1], goal[0], goal[1]))
+        resolution = mapdata.info.resolution
         frontier = PriorityQueue()
         frontier.put(start, 0)
         came_from = {}
@@ -423,8 +414,16 @@ class PathPlanner:
                     priority = new_cost + self.heuristic(next, goal)
                     frontier.put(next, priority)
                     came_from[next] = current
-        rospy.loginfo(came_from)
+                    #rospy.loginfo(came_from)
 
+
+        
+       
+
+        grid_cell_msg = GridCells(resolution, resolution, came_from)
+                    
+        #self.cells_visited_astar.publish(grid_cell_msg)
+        
         path = self.reconstruct_path(mapdata, came_from, start, goal)
         rospy.loginfo(path)
         return path
