@@ -33,7 +33,8 @@ class PathPlanner:
 
         ## Create publishers for A* (expanded cells, frontier, ...)
         ## Choose a the topic names, the message type is GridCells
-        self.astar_pub = rospy.Publisher('/plan_path/astar', GridCells, queue_size=10)
+        self.astar_pub_expandedCells = rospy.Publisher('/plan_path/astar/expandedCells', GridCells, queue_size=10)
+        self.astar_pub_frontier = rospy.Publisher('/plan_path/astar/frontier', GridCells, queue_size=10)
 
         # Publisher for visualizing grid cells visited
         self.cells_visited_astar = rospy.Publisher('/plan_path/cell_visited_astar', GridCells, queue_size=10)
@@ -93,14 +94,15 @@ class PathPlanner:
         """
         ### REQUIRED CREDIT
         map_resolution = mapdata.info.resolution
+        # print("P = ",p)
+        world_coordinate_x = (p[0] + 0.5) * map_resolution + mapdata.info.origin.position.x
+        world_coordinate_y = (p[1] + 0.5) * map_resolution + mapdata.info.origin.position.y
 
-        world_coordinate_x = ((p[0] + 0.5) * map_resolution) + mapdata.info.origin.position.x
-        world_coordinate_y = ((p[1] + 0.5) * map_resolution) + mapdata.info.origin.position.y
-
-        Point.x = world_coordinate_x
-        Point.y = world_coordinate_y
+        retval = Point()
+        retval.x = world_coordinate_x
+        retval.y = world_coordinate_y
         
-        return Point.x,Point.y
+        return retval
         
         
     @staticmethod
@@ -400,6 +402,7 @@ class PathPlanner:
         cost_so_far = {}
         came_from[start] = None
         cost_so_far[start] = 0
+    #    header = GridCells.header 
         
         while not frontier.empty():
             current = frontier.get()
@@ -415,16 +418,17 @@ class PathPlanner:
                     frontier.put(next, priority)
                     came_from[next] = current
                     #rospy.loginfo(came_from)
-
-
-        
-       
-
-        grid_cell_msg = GridCells(resolution, resolution, came_from)
-                    
-        #self.cells_visited_astar.publish(grid_cell_msg)
+            
         
         path = self.reconstruct_path(mapdata, came_from, start, goal)
+    #    print(path)
+        for node in path:
+            path_point = PathPlanner.grid_to_world(mapdata, node)
+            print(path_point)
+    #        grid_cell_msg = GridCells(resolution, resolution, path_point)
+                    
+      
+    #    self.cells_visited_astar.publish(grid_cell_msg)
         rospy.loginfo(path)
         return path
         
@@ -450,6 +454,12 @@ class PathPlanner:
         ### REQUIRED CREDIT
         rospy.loginfo("Returning a Path message")
 
+    #    path_message = Path(PathPlanner.path_to_poses(mapdata, path))
+
+
+    #    return path_message
+
+
 
         
     def plan_path_handler(self, msg):
@@ -474,6 +484,7 @@ class PathPlanner:
         start = PathPlanner.world_to_grid(mapdata, msg.start.pose.position)
         goal  = PathPlanner.world_to_grid(mapdata, msg.goal.pose.position)
         path  = self.a_star(mapdata, start, goal)
+
         ## Optimize waypoints
         waypoints = PathPlanner.optimize_path(path)
         ## Return a Path message

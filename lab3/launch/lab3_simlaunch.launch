@@ -11,6 +11,9 @@
      args="-d $(find lab3)/rviz/RBE3002_lab3.rviz"/> 
 <node name="lab3" pkg="lab3" type="path_planner.py"/>
 <node name="static_transform_publisher" pkg="tf" type="static_transform_publisher" args= "0 0 0 0 0 0 /map /odom 100" respawn="false" output="screen" />
+<node name="map_server" pkg="map_server" type="map_server"
+        args="$(find lab3)/maps/simple_map.yaml" />
+
 
 <!-- <param name="turtle" type="string" value="turtle1" /> -->
 
