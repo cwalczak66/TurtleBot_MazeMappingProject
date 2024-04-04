@@ -3,10 +3,11 @@
 from __future__ import annotations
 import rospy
 from nav_msgs.srv import GetPlan, GetMap
-from nav_msgs.msg import GridCells, Path
+from nav_msgs.msg import GridCells, OccupancyGrid, Path
 from geometry_msgs.msg import Point, Pose, PoseStamped
 from math import sqrt
 from priority_queue import PriorityQueue
+from visualization_msgs.msg import Marker, MarkerArray
 
 
 
@@ -23,7 +24,7 @@ class PathPlanner:
         rospy.init_node("path_planner")
         ## Create a new service called "plan_path" that accepts messages of
         ## type GetPlan and calls self.plan_path() when a message is received
-        self.path_plan_service = rospy.Service('plan_path', GetPlan, self.plan_path_handler(GetPlan))
+        self.path_plan_service = rospy.Service('plan_path', GetPlan, self.plan_path_handler)
 
         ## Create a publisher for the C-space (the enlarged occupancy grid)
         ## The topic is "/path_planner/cspace", the message type is GridCells
@@ -33,6 +34,11 @@ class PathPlanner:
         ## Create publishers for A* (expanded cells, frontier, ...)
         ## Choose a the topic names, the message type is GridCells
         self.astar_pub = rospy.Publisher('/plan_path/astar', GridCells, queue_size=10)
+
+        # Publisher for visualizing grid cells visited
+        self.cells_visited_astar = rospy.Publisher('/plan_path/cell_visited_astar', GridCells, queue_size=10)
+
+        self.update_color_pub = rospy.Publisher('/visualization_msgs', MarkerArray, queue_size=10)
 
         ## Initialize the request counter
         self.request_counter = 0
@@ -114,7 +120,9 @@ class PathPlanner:
         cell_coordinate_x = int((wp.x - world_origin_x) / map_resolution)
         cell_coordinate_y = int((wp.y - world_origin_y) / map_resolution)
 
-        cell_position = tuple(cell_coordinate_x, cell_coordinate_y)
+        
+
+        cell_position = (cell_coordinate_x, cell_coordinate_y)
 
         return cell_position
         
@@ -155,25 +163,25 @@ class PathPlanner:
         ### REQUIRED CREDIT
         map_boundary_x = mapdata.info.width # no.of cells
         map_boundary_y = mapdata.info.height # no.of cells
-        map_origin_x = mapdata.info.origin.position.x
-        map_origin_y = mapdata.info.origin.position.y
+        map_origin_x = int(mapdata.info.origin.position.x)
+        map_origin_y = int(mapdata.info.origin.position.y)
         cell_walkable = True
         cell_free = True
 
-#        if (p[0] < map_origin_x or p[0] >= map_origin_x + map_boundary_x or
-#            p[1] < map_origin_y or p[1] >= map_origin_y + map_boundary_y):
-#           return cell_walkable == False
+        if(p[0] < map_origin_x or p[0] >= map_origin_x + map_boundary_x or
+           p[1] < map_origin_y or p[1] >= map_origin_y + map_boundary_y):
+          return cell_walkable == False
         
-        if p[0] not in range(map_origin_x, map_boundary_x) or p[1] not in range(map_origin_y, map_boundary_y):
-            print("cell is not walkable")
-            return cell_walkable == False
+        # if p[0] not in range(map_origin_x, map_boundary_x) or p[1] not in range(map_origin_y, map_boundary_y):
+        #     print("cell is not walkable")
+        #     return cell_walkable == False
         else:
-            for x in mapdata.data:
                 # cell_index = (p[1] - map_origin_y) * map_boundary_x + (p[0] - map_origin_x)
                 # x = mapdata.data[cell_index]
-                 x = PathPlanner.grid_to_index(mapdata, p)    
+            x = PathPlanner.grid_to_index(mapdata, p)  
+            value = mapdata.data[x]  
                   
-            if x >= 50 or x == -1:
+            if value >= 50 or value == -1:
                 cell_free = False
                 print("cell not free")
             
@@ -209,21 +217,23 @@ class PathPlanner:
 
         # if PathPlanner.is_cell_walkable(mapdata, p) == True:
         #     print("cell_walkable")
-        cell_edge_neighbour_top = tuple(p[0], p[1]+1)
+        cell_edge_neighbour_top = (p[0], p[1]+1)
         if PathPlanner.is_cell_walkable(mapdata, cell_edge_neighbour_top):
             cell_neighbours4.append(cell_edge_neighbour_top)
 
-        cell_edge_neighbour_bottom = tuple(p[0], p[1]-1)
+        cell_edge_neighbour_bottom = (p[0], p[1]-1)
         if PathPlanner.is_cell_walkable(mapdata, cell_edge_neighbour_bottom):
             cell_neighbours4.append(cell_edge_neighbour_bottom)
 
-        cell_edge_neighbour_right = tuple(p[0]+1, p[1])
+        cell_edge_neighbour_right = (p[0]+1, p[1])
         if PathPlanner.is_cell_walkable(mapdata, cell_edge_neighbour_right):
             cell_neighbours4.append(cell_edge_neighbour_right)
 
-        cell_edge_neighbour_left = tuple(p[0]-1, p[1])
+        cell_edge_neighbour_left = (p[0]-1, p[1])
         if PathPlanner.is_cell_walkable(mapdata, cell_edge_neighbour_left):
             cell_neighbours4.append(cell_edge_neighbour_left)
+        
+        rospy.loginfo(cell_neighbours4)
 
         return cell_neighbours4
 
@@ -246,42 +256,22 @@ class PathPlanner:
 
     #    cell_neighbours8 = []
         cell_neighbours8 = PathPlanner.neighbors_of_4(mapdata,p)
-
-        
-
-        # if PathPlanner.is_cell_walkable(mapdata, p) == True:
-        #     print("cell_walkable")
-        """ for neighbour in cell_neighbours8:
-            cell_topRightcorner = tuple(neighbour[0][1]+1, neighbour[0][1])
-            if PathPlanner.is_cell_walkable(mapdata, cell_topRightcorner):
-                cell_neighbours8.append(cell_topRightcorner)
-
-            cell_topLeftcorner = tuple(neighbour[0][1]-1, neighbour[0][1])
-            if PathPlanner.is_cell_walkable(mapdata, cell_topLeftcorner):
-                cell_neighbours8.append(cell_topLeftcorner)
-
-            cell_bottomRightcorner = tuple(neighbour[1][1]+1, neighbour[1][1])
-            if PathPlanner.is_cell_walkable(mapdata, cell_bottomRightcorner):
-                cell_neighbours8.append(cell_bottomRightcorner)
-
-            cell_bottomLeftcorner = tuple(neighbour[1][1]-1, neighbour[1][1])
-            if PathPlanner.is_cell_walkable(mapdata, cell_bottomLeftcorner):
-                cell_neighbours8.append(cell_bottomLeftcorner) """
-        
+        rospy.loginfo(cell_neighbours8)
       
-        cell_topRightcorner = tuple(cell_neighbours8[0][0]+1, cell_neighbours8[0][1])
+        cell_topRightcorner = (cell_neighbours8[0][0]+1, cell_neighbours8[0][1])
         if PathPlanner.is_cell_walkable(mapdata, cell_topRightcorner):
+            
             cell_neighbours8.append(cell_topRightcorner)
 
-        cell_topLeftcorner = tuple(cell_neighbours8[0][0]-1, cell_neighbours8[0][1])
+        cell_topLeftcorner = (cell_neighbours8[0][0]-1, cell_neighbours8[0][1])
         if PathPlanner.is_cell_walkable(mapdata, cell_topLeftcorner):
             cell_neighbours8.append(cell_topLeftcorner)
 
-        cell_bottomRightcorner = tuple(cell_neighbours8[1][0]+1, cell_neighbours8[1][1])
+        cell_bottomRightcorner = (cell_neighbours8[1][0]+1, cell_neighbours8[1][1])
         if PathPlanner.is_cell_walkable(mapdata, cell_bottomRightcorner):
             cell_neighbours8.append(cell_bottomRightcorner)
 
-        cell_bottomLeftcorner = tuple(cell_neighbours8[1][0]-1, cell_neighbours8[1][1])
+        cell_bottomLeftcorner = (cell_neighbours8[1][0]-1, cell_neighbours8[1][1])
         if PathPlanner.is_cell_walkable(mapdata, cell_bottomLeftcorner):
             cell_neighbours8.append(cell_bottomLeftcorner)
 
@@ -365,7 +355,50 @@ class PathPlanner:
 
         return abs(ax-bx) + abs(ay-by) #Manhattan distance
 
+    def reconstruct_path(self, mapdata: OccupancyGrid, came_from: list[tuple[int,int]], start: tuple[int, int], goal: tuple[int, int]) -> list[tuple[int, int]]:
 
+
+
+        # Define grid cell properties
+        cell_size = mapdata.info.resolution  # Size of each cell
+
+        cell_color = [1.0, 0.0, 0.0]  # Default color for cells
+        
+        # Create MarkerArray message
+        marker_array_msg = MarkerArray()
+
+        marker = Marker()
+        marker.header.frame_id = "map"
+        marker.type = Marker.CUBE
+        marker.action = Marker.ADD
+        marker.pose.position.x = goal[0]
+        marker.pose.position.y = goal[1]
+        marker.pose.position.z = 0
+        marker.pose.orientation.w = 1
+        marker.scale.x = cell_size
+        marker.scale.y = cell_size
+        marker.color.a = 1.0  # Alpha
+        marker.color.r = 1.0  # Red
+        marker.color.g = 0.0  # Green
+        marker.color.b = 0.0  # Blue
+
+        marker_array_msg.markers.append(marker)
+        self.update_color_pub.publish(marker_array_msg)
+
+        rospy.loginfo(marker_array_msg)
+        
+
+
+        current = goal
+        path = []
+        if goal not in came_from: # no path was found
+            return []
+        while current != start:
+            path.append(current)
+            current = came_from[current]
+        path.append(start) # optional
+        path.reverse() # optional
+        return path
     
     def a_star(self, mapdata: OccupancyGrid, start: tuple[int, int], goal: tuple[int, int]) -> list[tuple[int, int]]:
         ### REQUIRED CREDIT
@@ -383,15 +416,18 @@ class PathPlanner:
             if current == goal:
                 break
             
-            for next in self.neighbors_of_8:
+            for next in self.neighbors_of_8(mapdata, current):
                 new_cost = cost_so_far[current] + self.cost(current, next)
                 if next not in cost_so_far or new_cost < cost_so_far[next]:
                     cost_so_far[next] = new_cost
                     priority = new_cost + self.heuristic(next, goal)
                     frontier.put(next, priority)
                     came_from[next] = current
-        
-        return came_from, cost_so_far
+        rospy.loginfo(came_from)
+
+        path = self.reconstruct_path(mapdata, came_from, start, goal)
+        rospy.loginfo(path)
+        return path
         
     
     @staticmethod
@@ -435,10 +471,10 @@ class PathPlanner:
         #cspacedata = self.calc_cspace(mapdata, 1)
         ## Execute A*
 
-        
+        rospy.loginfo(msg)
         start = PathPlanner.world_to_grid(mapdata, msg.start.pose.position)
         goal  = PathPlanner.world_to_grid(mapdata, msg.goal.pose.position)
-        path  = self.a_star(cspacedata, start, goal)
+        path  = self.a_star(mapdata, start, goal)
         ## Optimize waypoints
         waypoints = PathPlanner.optimize_path(path)
         ## Return a Path message
@@ -450,13 +486,13 @@ class PathPlanner:
         """
         Runs the node until Ctrl-C is pressed.
         """
-        self.grid_to_index()
-        self.euclidean_distance()
-        self.grid_to_world()
-        self.is_cell_walkable()
-        self.neighbors_of_4()
-        self.neighbors_of_8()
-        self.a_star()
+        # self.grid_to_index()
+        # self.euclidean_distance()
+        # self.grid_to_world()
+        # self.is_cell_walkable()
+        # self.neighbors_of_4()
+        # self.neighbors_of_8()
+        # self.a_star()
 
         rospy.spin()
 

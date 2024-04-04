@@ -13,6 +13,7 @@ class PathPlannerClient:
 
     def __init__(self):
         # suscribing to 2d nav goal 
+        rospy.init_node("path_planner_client")
         print("starting client")
         rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.path_planner_client)
         rospy.Subscriber('/odom', Odometry, self.update_odometry)
@@ -23,7 +24,10 @@ class PathPlannerClient:
     
         rospy.wait_for_service('plan_path')
         start = self.start_pose
-        goal = msg
+        rospy.loginfo(msg)
+        goal = PoseStamped()
+        goal.pose = msg.pose
+        goal.header = msg.header
 
         try:
             path_planner_call = rospy.ServiceProxy('plan_path', GetPlan)
@@ -36,6 +40,33 @@ class PathPlannerClient:
     
     
     
-    def update_odometry(self, msg: Odometry):
-        self.start_pose = msg
+    def update_odometry(self, odom_msg: Odometry):
+
+        # px = msg.pose.pose.position.x
+        # py = msg.pose.pose.position.y
+        # quat_orig = msg.pose.pose.orientation
+        # quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
+        # (roll, pitch, yaw) = euler_from_quaternion(quat_list)
+        # pth = yaw
+
+        pose_stamped_msg = PoseStamped()
+        pose_stamped_msg.header = odom_msg.header
+        pose_stamped_msg.pose = odom_msg.pose.pose
+        self.start_pose = pose_stamped_msg
+        
+
+    
+    
+    def run(self):
+        """
+        Runs the node until Ctrl-C is pressed.
+        """
+       
+        rospy.spin()
+
+
+        
+if __name__ == '__main__':
+    PathPlannerClient().run()
+
     
