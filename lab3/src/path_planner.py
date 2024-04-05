@@ -164,13 +164,19 @@ class PathPlanner:
         ### REQUIRED CREDIT
         map_boundary_x = mapdata.info.width # no.of cells
         map_boundary_y = mapdata.info.height # no.of cells
-        map_origin_x = int(mapdata.info.origin.position.x)
-        map_origin_y = int(mapdata.info.origin.position.y)
+        map_origin_x = int(mapdata.info.origin.position.x) + 5
+        map_origin_y = int(mapdata.info.origin.position.y) + 5
         cell_walkable = True
         cell_free = True
 
+        print("origin x = %s",map_origin_x)
+        print("origin y = %s",map_origin_y)
+        print("boundary= %s", map_boundary_x)
+
         if(p[0] < map_origin_x or p[0] >= map_origin_x + map_boundary_x or
            p[1] < map_origin_y or p[1] >= map_origin_y + map_boundary_y):
+          
+          
           return cell_walkable == False
         
         # if p[0] not in range(map_origin_x, map_boundary_x) or p[1] not in range(map_origin_y, map_boundary_y):
@@ -254,7 +260,7 @@ class PathPlanner:
         map_origin_x = mapdata.info.origin.position.x
         map_origin_y = mapdata.info.origin.position.y
 
-    #    cell_neighbours8 = []
+        cell_neighbours8 = []
         cell_neighbours8 = PathPlanner.neighbors_of_4(mapdata,p)
         
       
@@ -295,7 +301,7 @@ class PathPlanner:
         if PathPlanner.is_cell_walkable(mapdata, cell_bottomLeftcorner):
             cell_neighbours8.append(cell_bottomLeftcorner)
 
-        rospy.loginfo(cell_neighbours8)
+        
 
         return cell_neighbours8
 
@@ -315,7 +321,7 @@ class PathPlanner:
 
         try:  
             get_map = rospy.ServiceProxy('/static_map', GetMap)
-
+            
             return get_map().map
         
 
@@ -366,16 +372,17 @@ class PathPlanner:
         bx = b[0]
         by = b[1]
 
-        return sqrt(pow(ax - bx, 2) + pow(ay - by, 2)) #Euclidean distance
+        return abs(ax-bx) + abs(ay-by) #Manhattan distance
     
     def cost(self, a: tuple[int,int], b: tuple[int,int]) -> int:
 
+        
         ax = a[0]
         ay = a[1]
         bx = b[0]
         by = b[1]
 
-        return abs(ax-bx) + abs(ay-by) #Manhattan distance
+        return sqrt(pow(ax - bx, 2) + pow(ay - by, 2)) #Euclidean distance
 
     def reconstruct_path(self, mapdata: OccupancyGrid, came_from: list[tuple[int,int]], start: tuple[int, int], goal: tuple[int, int]) -> list[tuple[int, int]]:
 
@@ -396,14 +403,14 @@ class PathPlanner:
     def a_star(self, mapdata: OccupancyGrid, start: tuple[int, int], goal: tuple[int, int]) -> list[tuple[int, int]]:
         ### REQUIRED CREDIT
         rospy.loginfo("Executing A* from (%d,%d) to (%d,%d)" % (start[0], start[1], goal[0], goal[1]))
-        resolution = mapdata.info.resolution
+        print(mapdata.info.width)
+        print(mapdata.info.height)
         frontier = PriorityQueue()
         frontier.put(start, 0)
         came_from = {}
         cost_so_far = {}
         came_from[start] = None
         cost_so_far[start] = 0
-    #    header = GridCells.header 
         
         while not frontier.empty():
             current = frontier.get()
@@ -418,25 +425,13 @@ class PathPlanner:
                     priority = new_cost + self.heuristic(next, goal)
                     frontier.put(next, priority)
                     came_from[next] = current
+                    rospy.sleep(0.001)
+                    self.astar_pub_expandedCells.publish(self.makeDisplayMsg(mapdata, list(came_from)))
                     
-            
+        
         
         path = self.reconstruct_path(mapdata, came_from, start, goal)
-        point_list: Point = []
-        for node in path:
-            print("adding point")
-            point_list.append(PathPlanner.grid_to_world(mapdata, node))
-            print(point_list)
-        # Set the header
-        grid_cell_msg = GridCells()
-        grid_cell_msg.header.stamp = rospy.Time.now()
-        grid_cell_msg.header.frame_id = "map"
-        
-        grid_cell_msg.cell_height = resolution
-        grid_cell_msg.cell_width = resolution
-        grid_cell_msg.cells = point_list
-
-        self.cells_visited_astar.publish(grid_cell_msg)
+        self.cells_visited_astar.publish(self.makeDisplayMsg(mapdata, path))
 
             
         
@@ -445,7 +440,25 @@ class PathPlanner:
     #    self.cells_visited_astar.publish(grid_cell_msg)
         rospy.loginfo(path)
         return path
+    
+    def makeDisplayMsg(self, mapdata: OccupancyGrid,  list_of_nodes: list[tuple[int, int]]):
         
+        point_list: Point = []
+        resolution = mapdata.info.resolution
+
+        for node in list_of_nodes:
+            point_list.append(PathPlanner.grid_to_world(mapdata, node))
+
+        # Set the header
+        grid_cell_msg = GridCells()
+        grid_cell_msg.header.stamp = rospy.Time.now()
+        grid_cell_msg.header.frame_id = "map"
+        grid_cell_msg.cell_height = resolution
+        grid_cell_msg.cell_width = resolution
+        grid_cell_msg.cells = point_list
+
+        return grid_cell_msg
+
     
     @staticmethod
     def optimize_path(path: list[tuple[int, int]]) -> list[tuple[int, int]]:
@@ -490,11 +503,13 @@ class PathPlanner:
         if mapdata is None:
             return Path()
         ## Calculate the C-space and publish it
-        print("ok made it through that")
+        print(mapdata.info.resolution)
+        print(mapdata.info.height)
+        print(mapdata.info.width)
         #cspacedata = self.calc_cspace(mapdata, 1)
         ## Execute A*
 
-        rospy.loginfo(msg)
+        
         start = PathPlanner.world_to_grid(mapdata, msg.start.pose.position)
         goal  = PathPlanner.world_to_grid(mapdata, msg.goal.pose.position)
         path  = self.a_star(mapdata, start, goal)
