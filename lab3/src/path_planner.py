@@ -507,10 +507,6 @@ class PathPlanner:
         ### REQUIRED CREDIT
         rospy.loginfo("Returning a Path message")
 
-    #    path_message = Path(PathPlanner.path_to_poses(mapdata, path))
-
-
-    #    return path_message
 
 
 
