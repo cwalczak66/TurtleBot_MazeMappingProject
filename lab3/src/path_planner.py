@@ -346,25 +346,51 @@ class PathPlanner:
 
         map_width = mapdata.info.width
         new_mapData = mapdata
+        new_mapData.data = list(mapdata.data)
+        padded_map_list = []
+
+      #  for pad in range(1, padding):
+        for cell_index in range(len(mapdata.data)):
+                value = mapdata.data[cell_index]
+                if value > 60: # Identifying any value above 50 in the occupancy grid as obstacle
+                    cell_coordinate_y = int(cell_index / map_width)
+                    cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
+                    cell_coordinate = (cell_coordinate_x, cell_coordinate_y)
+                #    print(cell_coordinate)
+                    padded_map_list.append(cell_coordinate)
+                    print(padded_map_list)
+
+                    """ for thick in PathPlanner.neighbors_of_8(mapdata, cell_coordinate):
+                        # new_mapData.data[PathPlanner.grid_to_index(new_mapData, thick)] = 100 # increasing the cell thickness by 100 (1 cell)
+                        thick_index = self.grid_to_index(mapdata, thick)
+                        if thick_index is not None:
+                            new_mapData.data[thick_index] = 100 """
 
 
-    #    for pad in range(1, padding):
-        for occupancy in mapdata.data:
-            if occupancy > 50: # Identifying any value above 50 in the occupancy grid as obstacle
-                cell_index = mapdata.data.index(occupancy)
-                cell_coordinate_y = int(cell_index / map_width)
-                cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
-                cell_coordinate = tuple(cell_coordinate_x, cell_coordinate_y)
-                print(cell_coordinate)
-                for thick in PathPlanner.neighbors_of_8(mapdata, cell_coordinate):
-                    new_mapData.data[PathPlanner.grid_to_index(new_mapData, thick)] == 100 # increasing the cell thickness by 100 (1 cell)
+
+                    """ for dx in range(-padding, padding + 1):
+                        for dy in range(-padding, padding + 1):
+                         # Skip the current cell
+                            if dx == 0 and dy == 0:
+                                continue
+                    
+                            # Calculate the neighbor coordinates
+                            neighbor_x = cell_coordinate_x + dx
+                            neighbor_y = cell_coordinate_y + dy
+                            neighbour_coordinate = (neighbor_x, neighbor_y)
+
+                            if 0 <= neighbor_x < mapdata.info.width and 0 <= neighbor_y < mapdata.info.height:
+                                 # Calculate the index of the neighbor cell
+                                neighbor_index = neighbor_y * mapdata.info.width + neighbor_x
+
+                                if new_mapData.data[neighbor_index] < 100:
+                                    new_mapData.data[neighbor_index] = 100 """
+
         mapdata = new_mapData
 
-        resolution = new_mapData.info.resolution
-        grid_cells_message = GridCells(resolution, resolution, new_mapData.data)
-        self.cspace_pub.publish(grid_cells_message)
+        self.cspace_pub.publish(self.makeDisplayMsg(new_mapData,padded_map_list))
         ## Return the C-space
-        return new_mapData
+        return new_mapData 
 
     def heuristic(self, a: tuple[int,int], b: tuple[int,int]) -> int:
         ax = a[0]
@@ -506,18 +532,18 @@ class PathPlanner:
         print(mapdata.info.resolution)
         print(mapdata.info.height)
         print(mapdata.info.width)
-        #cspacedata = self.calc_cspace(mapdata, 1)
+        cspacedata = self.calc_cspace(mapdata, 1)
         ## Execute A*
 
         
-        start = PathPlanner.world_to_grid(mapdata, msg.start.pose.position)
-        goal  = PathPlanner.world_to_grid(mapdata, msg.goal.pose.position)
-        path  = self.a_star(mapdata, start, goal)
+        start = PathPlanner.world_to_grid(cspacedata, msg.start.pose.position)
+        goal  = PathPlanner.world_to_grid(cspacedata, msg.goal.pose.position)
+        path  = self.a_star(cspacedata, start, goal)
 
         ## Optimize waypoints
         waypoints = PathPlanner.optimize_path(path)
         ## Return a Path message
-        return self.path_to_message(mapdata, waypoints)
+        return self.path_to_message(cspacedata, waypoints)
 
 
     
