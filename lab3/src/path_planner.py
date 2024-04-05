@@ -382,6 +382,7 @@ class PathPlanner:
         current = goal
         path = []
         if goal not in came_from: # no path was found
+            print("no path found")
             return []
         while current != start:
             path.append(current)
@@ -417,15 +418,28 @@ class PathPlanner:
                     priority = new_cost + self.heuristic(next, goal)
                     frontier.put(next, priority)
                     came_from[next] = current
-                    #rospy.loginfo(came_from)
+                    
             
         
         path = self.reconstruct_path(mapdata, came_from, start, goal)
-    #    print(path)
+        point_list: Point = []
         for node in path:
-            path_point = PathPlanner.grid_to_world(mapdata, node)
-            print(path_point)
-    #        grid_cell_msg = GridCells(resolution, resolution, path_point)
+            print("adding point")
+            point_list.append(PathPlanner.grid_to_world(mapdata, node))
+            print(point_list)
+        # Set the header
+        grid_cell_msg = GridCells()
+        grid_cell_msg.header.stamp = rospy.Time.now()
+        grid_cell_msg.header.frame_id = "map"
+        
+        grid_cell_msg.cell_height = resolution
+        grid_cell_msg.cell_width = resolution
+        grid_cell_msg.cells = point_list
+
+        self.cells_visited_astar.publish(grid_cell_msg)
+
+            
+        
                     
       
     #    self.cells_visited_astar.publish(grid_cell_msg)
