@@ -345,52 +345,54 @@ class PathPlanner:
         ## Return the C-space
 
         map_width = mapdata.info.width
-        new_mapData = mapdata
-        new_mapData.data = list(mapdata.data)
+        cspace_mapData = mapdata
+        cspace_mapData.data = list(mapdata.data)
         padded_map_list = []
 
-      #  for pad in range(1, padding):
+        
         for cell_index in range(len(mapdata.data)):
-                value = mapdata.data[cell_index]
-                if value > 60: # Identifying any value above 50 in the occupancy grid as obstacle
-                    cell_coordinate_y = int(cell_index / map_width)
-                    cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
-                    cell_coordinate = (cell_coordinate_x, cell_coordinate_y)
+            value = mapdata.data[cell_index]
+            if value > 50: # Identifying any value above 50 in the occupancy grid as obstacle
+                cell_coordinate_y = int(cell_index / map_width)
+                cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
+                #cell_coordinate = (cell_coordinate_x, cell_coordinate_y)
                 #    print(cell_coordinate)
-                    padded_map_list.append(cell_coordinate)
-                    print(padded_map_list)
+                #padded_map_list.append(cell_coordinate)
+                #    print(padded_map_list)
 
-                    """ for thick in PathPlanner.neighbors_of_8(mapdata, cell_coordinate):
-                        # new_mapData.data[PathPlanner.grid_to_index(new_mapData, thick)] = 100 # increasing the cell thickness by 100 (1 cell)
-                        thick_index = self.grid_to_index(mapdata, thick)
-                        if thick_index is not None:
-                            new_mapData.data[thick_index] = 100 """
+                """ for thick in PathPlanner.neighbors_of_8(mapdata, cell_coordinate):
+                    # new_mapData.data[PathPlanner.grid_to_index(new_mapData, thick)] = 100 # increasing the cell thickness by 100 (1 cell)
+                    thick_index = self.grid_to_index(mapdata, thick)
+                    if thick_index is not None:
+                        new_mapData.data[thick_index] = 100 """
 
-
-
-                    """ for dx in range(-padding, padding + 1):
-                        for dy in range(-padding, padding + 1):
-                         # Skip the current cell
-                            if dx == 0 and dy == 0:
-                                continue
+                for dx in range(-padding, padding + 1):
+                    for dy in range(-padding, padding + 1):
+                        # Skip the current cell
+                        if dx == 0 and dy == 0:
+                            continue
                     
-                            # Calculate the neighbor coordinates
-                            neighbor_x = cell_coordinate_x + dx
-                            neighbor_y = cell_coordinate_y + dy
-                            neighbour_coordinate = (neighbor_x, neighbor_y)
+                        # Calculate the neighbor coordinates
+                        neighbor_x = cell_coordinate_x + dx
+                        neighbor_y = cell_coordinate_y + dy
+                        neighbour_coordinate = (neighbor_x, neighbor_y)
+                    #    print(neighbour_coordinate)
 
-                            if 0 <= neighbor_x < mapdata.info.width and 0 <= neighbor_y < mapdata.info.height:
-                                 # Calculate the index of the neighbor cell
-                                neighbor_index = neighbor_y * mapdata.info.width + neighbor_x
+                        if 0 <= neighbor_x < mapdata.info.width and 0 <= neighbor_y < mapdata.info.height:
+                            # Calculate the index of the neighbor cell
+                        #    neighbor_index = neighbor_y * mapdata.info.width + neighbor_x
+                            neighbor_index = self.grid_to_index(mapdata,neighbour_coordinate)
 
-                                if new_mapData.data[neighbor_index] < 100:
-                                    new_mapData.data[neighbor_index] = 100 """
+                            if cspace_mapData.data[neighbor_index] < 100:
+                                cspace_mapData.data[neighbor_index] = 100 
+                                padded_map_list.append(neighbour_coordinate)
+                     #           print(padded_map_list)
+        mapdata = cspace_mapData
 
-        mapdata = new_mapData
-
-        self.cspace_pub.publish(self.makeDisplayMsg(new_mapData,padded_map_list))
+        self.cspace_pub.publish(self.makeDisplayMsg(cspace_mapData,padded_map_list))
         ## Return the C-space
-        return new_mapData 
+        return cspace_mapData 
+
 
     def heuristic(self, a: tuple[int,int], b: tuple[int,int]) -> int:
         ax = a[0]
