@@ -8,6 +8,7 @@ from geometry_msgs.msg import Point, Pose, PoseStamped
 from math import sqrt
 from priority_queue import PriorityQueue
 from visualization_msgs.msg import Marker, MarkerArray
+import copy
 
 
 
@@ -328,7 +329,6 @@ class PathPlanner:
 
         except rospy.ServiceException as e:
          print("Service call failed: %s"%e)
-        
 
     def calc_cspace(self, mapdata: OccupancyGrid, padding: int) -> OccupancyGrid:
         """
@@ -346,28 +346,42 @@ class PathPlanner:
         ## Return the C-space
 
         map_width = mapdata.info.width
-        cspace_mapData = mapdata
-        cspace_mapData.data = list(mapdata.data)
+        curr_mapData = copy.deepcopy(mapdata)
+        curr_mapData.data = list(curr_mapData.data)
         padded_map_list = []
 
-        
-        for cell_index in range(len(mapdata.data)):
-            value = mapdata.data[cell_index]
-            if value > 50: # Identifying any value above 50 in the occupancy grid as obstacle
-                cell_coordinate_y = int(cell_index / map_width)
-                cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
-                #cell_coordinate = (cell_coordinate_x, cell_coordinate_y)
-                #    print(cell_coordinate)
-                #padded_map_list.append(cell_coordinate)
+        new_mapData =  copy.deepcopy(curr_mapData)
+        new_mapData.data = list(new_mapData.data)
+
+        for amt_padded in range(0,padding):
+            #padded_map_list = []
+            for cell_index in range(len(curr_mapData.data)):
+                value = curr_mapData.data[cell_index]
+                if value > 50: # Identifying any value above 50 in the occupancy grid as obstacle
+                    cell_coordinate_y = int(cell_index / map_width)
+                    cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
+                    cell_coordinate = (cell_coordinate_x, cell_coordinate_y)
+                    print(cell_coordinate)
+                    print(value)
+                    padded_map_list.append(cell_coordinate)
                 #    print(padded_map_list)
+            #print(padded_map_list)
 
-                """ for thick in PathPlanner.neighbors_of_8(mapdata, cell_coordinate):
-                    # new_mapData.data[PathPlanner.grid_to_index(new_mapData, thick)] = 100 # increasing the cell thickness by 100 (1 cell)
-                    thick_index = self.grid_to_index(mapdata, thick)
-                    if thick_index is not None:
-                        new_mapData.data[thick_index] = 100 """
+                    for coordinate in PathPlanner.neighbors_of_8(curr_mapData, cell_coordinate):
+                        # new_mapData.data[PathPlanner.grid_to_index(new_mapData, thick)] = 100 # increasing the cell thickness by 100 (1 cell)
+                        coordinate_index = self.grid_to_index(curr_mapData, coordinate)
+                        if coordinate_index is not None:
+                            new_mapData.data[coordinate_index] = 100 
+                            padded_map_list.append(coordinate)
+            curr_mapData = copy.deepcopy(new_mapData)
+            curr_mapData.data = list(new_mapData.data)
+        # cspace_mapData = copy.deepcopy(padded_map_list)                    
+                
+                
 
-                for dx in range(-padding, padding + 1):
+      
+
+        """ for dx in range(-padding, padding + 1):
                     for dy in range(-padding, padding + 1):
                         # Skip the current cell
                         if dx == 0 and dy == 0:
@@ -387,13 +401,91 @@ class PathPlanner:
                             if cspace_mapData.data[neighbor_index] < 100:
                                 cspace_mapData.data[neighbor_index] = 100 
                                 padded_map_list.append(neighbour_coordinate)
-                     #           print(padded_map_list)
-        mapdata = cspace_mapData
-
-        self.cspace_pub.publish(self.makeDisplayMsg(cspace_mapData,padded_map_list))
+                     #           print(padded_map_list) """
+        # mapdata = cspace_mapData
+        print(padded_map_list)
+        print(mapdata)
+        self.cspace_pub.publish(self.makeDisplayMsg(curr_mapData,padded_map_list))
         ## Return the C-space
-        return cspace_mapData 
+        return curr_mapData 
+        
 
+    # def calc_cspace(self, mapdata: OccupancyGrid, padding: int) -> OccupancyGrid:
+    #     """
+    #     Calculates the C-Space, i.e., makes the obstacles in the map thicker.
+    #     Publishes the list of cells that were added to the original map.
+    #     :param mapdata [OccupancyGrid] The map data.
+    #     :param padding [int]           The number of cells around the obstacles.
+    #     :return        [OccupancyGrid] The C-Space.
+    #     """
+    #     ### REQUIRED CREDIT
+    #     rospy.loginfo("Calculating C-Space")
+    #     ## Go through each cell in the occupancy grid
+    #     ## Inflate the obstacles where necessary
+    #     ## Create a GridCells message and publish it
+    #     ## Return the C-space
+
+    #     map_width = mapdata.info.width
+    #     cspace_mapData = copy.deepcopy(mapdata)
+    #     cspace_mapData.data = list(cspace_mapData.data)
+    #     padded_map_list = []
+
+    #     for amt_padded in range(0,padding):
+    #         padded_map_list = []
+    #         for cell_index in range(len(mapdata.data)):
+    #             value = mapdata.data[cell_index]
+    #             if value > 50: # Identifying any value above 50 in the occupancy grid as obstacle
+    #                 cell_coordinate_y = int(cell_index / map_width)
+    #                 cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
+    #                 cell_coordinate = (cell_coordinate_x, cell_coordinate_y)
+    #                 print(cell_coordinate)
+    #                 print(value)
+    #                 padded_map_list.append(cell_coordinate)
+    #             #    print(padded_map_list)
+    #         #print(padded_map_list)
+
+    #                 for coordinate in PathPlanner.neighbors_of_8(mapdata, cell_coordinate):
+    #                     # new_mapData.data[PathPlanner.grid_to_index(new_mapData, thick)] = 100 # increasing the cell thickness by 100 (1 cell)
+    #                     coordinate_index = self.grid_to_index(mapdata, coordinate)
+    #                     if coordinate_index is not None:
+    #                         cspace_mapData.data[coordinate_index] = 100 
+    #                         padded_map_list.append(coordinate)
+                            
+    #     # cspace_mapData = copy.deepcopy(padded_map_list)                    
+                
+                
+
+      
+
+    #     """ for dx in range(-padding, padding + 1):
+    #                 for dy in range(-padding, padding + 1):
+    #                     # Skip the current cell
+    #                     if dx == 0 and dy == 0:
+    #                         continue
+                    
+    #                     # Calculate the neighbor coordinates
+    #                     neighbor_x = cell_coordinate_x + dx
+    #                     neighbor_y = cell_coordinate_y + dy
+    #                     neighbour_coordinate = (neighbor_x, neighbor_y)
+    #                 #    print(neighbour_coordinate)
+
+    #                     if 0 <= neighbor_x < mapdata.info.width and 0 <= neighbor_y < mapdata.info.height:
+    #                         # Calculate the index of the neighbor cell
+    #                     #    neighbor_index = neighbor_y * mapdata.info.width + neighbor_x
+    #                         neighbor_index = self.grid_to_index(mapdata,neighbour_coordinate)
+
+    #                         if cspace_mapData.data[neighbor_index] < 100:
+    #                             cspace_mapData.data[neighbor_index] = 100 
+    #                             padded_map_list.append(neighbour_coordinate)
+    #                  #           print(padded_map_list) """
+    #     # mapdata = cspace_mapData
+    #     print(padded_map_list)
+#
+
+        # self.cspace_pub.publish(self.makeDisplayMsg(cspace_mapData,padded_map_list))
+        # ## Return the C-space
+        # return cspace_mapData 
+    
 
     def heuristic(self, a: tuple[int,int], b: tuple[int,int]) -> int:
         ax = a[0]
@@ -532,10 +624,13 @@ class PathPlanner:
         print(mapdata.info.resolution)
         print(mapdata.info.height)
         print(mapdata.info.width)
-        cspacedata = self.calc_cspace(mapdata, 1)
+        cspacedata = self.calc_cspace(mapdata, 2)
         ## Execute A*
 
-        
+    #    start = PathPlanner.world_to_grid(mapdata, msg.start.pose.position)
+    #    goal  = PathPlanner.world_to_grid(mapdata, msg.goal.pose.position)
+    #    path  = self.a_star(mapdata, start, goal)
+
         start = PathPlanner.world_to_grid(cspacedata, msg.start.pose.position)
         goal  = PathPlanner.world_to_grid(cspacedata, msg.goal.pose.position)
         path  = self.a_star(cspacedata, start, goal)
