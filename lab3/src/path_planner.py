@@ -350,10 +350,12 @@ class PathPlanner:
         cspace_mapData.data = list(mapdata.data)
         padded_map_list = []
 
-        
-        for cell_index in range(len(mapdata.data)):
-            value = mapdata.data[cell_index]
+        rospy.loginfo(mapdata.data)
+        for cell_index in mapdata.data:
+            value = cell_index
+            rospy.loginfo(value)
             if value > 50: # Identifying any value above 50 in the occupancy grid as obstacle
+                
                 cell_coordinate_y = int(cell_index / map_width)
                 cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
                 #cell_coordinate = (cell_coordinate_x, cell_coordinate_y)
@@ -533,17 +535,20 @@ class PathPlanner:
         print(mapdata.info.height)
         print(mapdata.info.width)
         cspacedata = self.calc_cspace(mapdata, 1)
+        
+        
+        
         ## Execute A*
 
         
-        start = PathPlanner.world_to_grid(cspacedata, msg.start.pose.position)
-        goal  = PathPlanner.world_to_grid(cspacedata, msg.goal.pose.position)
-        path  = self.a_star(cspacedata, start, goal)
+        #start = PathPlanner.world_to_grid(cspacedata, msg.start.pose.position)
+        #goal  = PathPlanner.world_to_grid(cspacedata, msg.goal.pose.position)
+        #path  = self.a_star(cspacedata, start, goal)
 
         ## Optimize waypoints
-        waypoints = PathPlanner.optimize_path(path)
+        #waypoints = PathPlanner.optimize_path(path)
         ## Return a Path message
-        return self.path_to_message(cspacedata, waypoints)
+        #return self.path_to_message(cspacedata, waypoints)
 
 
     
