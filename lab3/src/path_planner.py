@@ -350,6 +350,7 @@ class PathPlanner:
         curr_mapData.data = list(curr_mapData.data)
         padded_map_list = []
 
+<<<<<<< HEAD
         new_mapData =  copy.deepcopy(curr_mapData)
         new_mapData.data = list(new_mapData.data)
 
@@ -364,6 +365,19 @@ class PathPlanner:
                     print(cell_coordinate)
                     print(value)
                     padded_map_list.append(cell_coordinate)
+=======
+        rospy.loginfo(mapdata.data)
+        for cell_index in mapdata.data:
+            value = cell_index
+            rospy.loginfo(value)
+            if value > 50: # Identifying any value above 50 in the occupancy grid as obstacle
+                
+                cell_coordinate_y = int(cell_index / map_width)
+                cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
+                #cell_coordinate = (cell_coordinate_x, cell_coordinate_y)
+                #    print(cell_coordinate)
+                #padded_map_list.append(cell_coordinate)
+>>>>>>> 33551cf0068ee5c1eee162eee09de45430b5f80d
                 #    print(padded_map_list)
             #print(padded_map_list)
 
@@ -624,6 +638,7 @@ class PathPlanner:
         print(mapdata.info.resolution)
         print(mapdata.info.height)
         print(mapdata.info.width)
+<<<<<<< HEAD
         cspacedata = self.calc_cspace(mapdata, 2)
         ## Execute A*
 
@@ -634,11 +649,23 @@ class PathPlanner:
         start = PathPlanner.world_to_grid(cspacedata, msg.start.pose.position)
         goal  = PathPlanner.world_to_grid(cspacedata, msg.goal.pose.position)
         path  = self.a_star(cspacedata, start, goal)
+=======
+        cspacedata = self.calc_cspace(mapdata, 1)
+        
+        
+        
+        ## Execute A*
+
+        
+        #start = PathPlanner.world_to_grid(cspacedata, msg.start.pose.position)
+        #goal  = PathPlanner.world_to_grid(cspacedata, msg.goal.pose.position)
+        #path  = self.a_star(cspacedata, start, goal)
+>>>>>>> 33551cf0068ee5c1eee162eee09de45430b5f80d
 
         ## Optimize waypoints
-        waypoints = PathPlanner.optimize_path(path)
+        #waypoints = PathPlanner.optimize_path(path)
         ## Return a Path message
-        return self.path_to_message(cspacedata, waypoints)
+        #return self.path_to_message(cspacedata, waypoints)
 
 
     
