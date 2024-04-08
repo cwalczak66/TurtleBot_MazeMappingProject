@@ -41,6 +41,9 @@ class PathPlanner:
         # Publisher for visualizing grid cells visited
         self.cells_visited_astar = rospy.Publisher('/plan_path/cell_visited_astar', GridCells, queue_size=10)
 
+        #publisher for the path message
+        self.path_solution = rospy.Publisher('/plan_path/solution_path', Path, queue_size=10)
+
 
         ## Initialize the request counter
         self.request_counter = 0
@@ -546,13 +549,77 @@ class PathPlanner:
                     priority = new_cost + self.heuristic(next, goal)
                     frontier.put(next, priority)
                     came_from[next] = current
-                    rospy.sleep(0.001)
-                    self.astar_pub_expandedCells.publish(self.makeDisplayMsg(mapdata, list(came_from)))
+                    #rospy.sleep(0.01)
+                    
+                    
                     
         
-        
+        self.astar_pub_expandedCells.publish(self.makeDisplayMsg(mapdata, list(came_from)))
         path = self.reconstruct_path(mapdata, came_from, start, goal)
         self.cells_visited_astar.publish(self.makeDisplayMsg(mapdata, path))
+        
+        path_msg = Path()
+        path_msg.header.frame_id = "map"
+        path_msg.header.stamp = rospy.Time.now()
+        poses_list = []
+        previous = None
+        for node in path:
+            new_pose = PoseStamped()
+            new_pose.header.frame_id = "map"
+            if previous is not None:
+                
+                new_pose.pose.position.x = float(node[0]) * 0.3
+                new_pose.pose.position.y = float(node[1]) * 0.3
+
+                if (node[0] == previous[0] and node[1] > previous[1]): #North
+                    new_pose.pose.orientation.z = 0.707
+                    new_pose.pose.orientation.w = 0.707
+                if (node[0] == previous[0] and node[1] < previous[1]): #South
+                    
+                    new_pose.pose.orientation.z = -0.707
+                    new_pose.pose.orientation.w = 0.707
+                if (node[0] > previous[0] and node[1] == previous[1]): #East
+                    
+                    new_pose.pose.orientation.w = 1.0
+                if (node[0] < previous[0] and node[1] == previous[1]): #west
+                    new_pose.pose.orientation.z = 1.0
+
+
+
+
+                if(node[0] > previous[0] and node[1] > previous[1]): #NE
+                    
+                    new_pose.pose.orientation.w = 0.924
+                    new_pose.pose.orientation.z = 0.383
+                    print("nw")
+                if(node[0] < previous[0] and node[1] > previous[1]): #NW
+                    new_pose.pose.orientation.w = 0.383
+                    new_pose.pose.orientation.z = 0.924
+                if(node[0] > previous[0] and node[1] < previous[1]): #SE
+                    print("se")
+                    new_pose.pose.orientation.w = 0.924
+                    new_pose.pose.orientation.z = -0.383
+                if(node[0] < previous[0] and node[1] < previous[1]): #SW
+                    new_pose.pose.orientation.w = 0.383
+                    new_pose.pose.orientation.z = -0.924
+                    # new_pose.pose.orientation.w = 0.924
+                    # new_pose.pose.orientation.z = -0.383
+                   
+            else:
+                new_pose.pose.position.x = 0.0
+                new_pose.pose.position.y = 0.0
+                new_pose.pose.position.z = 0.0
+                new_pose.pose.orientation.w = 1.0
+
+            poses_list.append(new_pose)
+            previous = node
+
+        path_msg.poses = poses_list
+        self.path_solution.publish(path_msg)
+
+        
+
+        
 
             
         
@@ -561,6 +628,8 @@ class PathPlanner:
     #    self.cells_visited_astar.publish(grid_cell_msg)
         rospy.loginfo(path)
         return path
+    
+    
     
     def makeDisplayMsg(self, mapdata: OccupancyGrid,  list_of_nodes: list[tuple[int, int]]):
         
@@ -624,7 +693,7 @@ class PathPlanner:
         print(mapdata.info.resolution)
         print(mapdata.info.height)
         print(mapdata.info.width)
-        cspacedata = self.calc_cspace(mapdata, 2)
+        cspacedata = self.calc_cspace(mapdata, 1)
         ## Execute A*
 
     #    start = PathPlanner.world_to_grid(mapdata, msg.start.pose.position)
@@ -634,6 +703,9 @@ class PathPlanner:
         start = PathPlanner.world_to_grid(cspacedata, msg.start.pose.position)
         goal  = PathPlanner.world_to_grid(cspacedata, msg.goal.pose.position)
         path  = self.a_star(cspacedata, start, goal)
+        ## Return a Path message
+        
+
 
         ## Optimize waypoints
         #waypoints = PathPlanner.optimize_path(path)
