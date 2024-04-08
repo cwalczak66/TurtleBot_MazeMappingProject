@@ -657,8 +657,50 @@ class PathPlanner:
         :param path [[(x,y)]] The path as a list of tuples (grid coordinates)
         :return     [[(x,y)]] The optimized path as a list of tuples (grid coordinates)
         """
-        ### EXTRA CREDIT
         rospy.loginfo("Optimizing path")
+        rm_node = False
+        current = None
+        for i in range(len(path) - 1):
+            current = path[i]
+            next = path[i+1]
+            
+            rm_node = PathPlanner.check_change_direction()
+        
+            
+    def check_change_direction(direction, a: list[tuple[int, int]], b: list[tuple[int, int]]):
+        change_direction = False
+        current_direction = None
+
+        if (a[0] == b[0] and a[1] > b[1]):
+            current_direction = "N"
+        if (a[0] == b[0] and a[1] < b[1]):
+            current_direction = "S"
+        if (a[0] > b[0] and a[1] == b[1]):
+            current_direction = "E"
+        if (a[0] < b[0] and a[1] == b[1]):
+            current_direction = "W"
+
+        if (a[0] > b[0] and a[1] > b[1]):
+            current_direction = "NE"
+        if (a[0] > b[0] and a[1] < b[1]):
+            current_direction = "SE"
+        if (a[0] < b[0] and a[1] < b[1]):
+            current_direction = "SW"
+        if (a[0] > b[0] and a[1] < b[1]):
+            current_direction = "NW"
+        
+        if current_direction != direction:
+            change_direction = True
+
+        return change_direction
+
+        
+        
+
+
+
+
+
 
         
 
