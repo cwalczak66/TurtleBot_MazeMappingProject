@@ -5,6 +5,9 @@ import rospy
 from nav_msgs.srv import GetPlan, GetMap
 from nav_msgs.msg import GridCells, OccupancyGrid, Path
 from geometry_msgs.msg import Point, Pose, PoseStamped
+from nav_msgs.msg import Odometry
+from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Twist, Vector3
 from math import sqrt
 from priority_queue import PriorityQueue
 from visualization_msgs.msg import Marker, MarkerArray
@@ -44,6 +47,8 @@ class PathPlanner:
         #publisher for the path message
         self.path_solution = rospy.Publisher('/plan_path/solution_path', Path, queue_size=10)
 
+        #Subscribing to cmd_vel topic to recieve messages about the goal 
+    #    self.goal_sub = rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.plan_path_handler)
 
         ## Initialize the request counter
         self.request_counter = 0
@@ -584,7 +589,7 @@ class PathPlanner:
                 if (node[0] < previous[0] and node[1] == previous[1]): #west
                     new_pose.pose.orientation.z = 1.0
 
-
+                
 
 
                 if(node[0] > previous[0] and node[1] > previous[1]): #NE
@@ -606,25 +611,16 @@ class PathPlanner:
                     # new_pose.pose.orientation.z = -0.383
                    
             else:
-                new_pose.pose.position.x = 0.0
-                new_pose.pose.position.y = 0.0
-                new_pose.pose.position.z = 0.0
+                new_pose.pose.position.x = 4.8
+                new_pose.pose.position.y = 4.8
                 new_pose.pose.orientation.w = 1.0
 
             poses_list.append(new_pose)
             previous = node
 
         path_msg.poses = poses_list
-        self.path_solution.publish(path_msg)
+        self.path_solution.publish(path_msg)            
 
-        
-
-        
-
-            
-        
-                    
-      
     #    self.cells_visited_astar.publish(grid_cell_msg)
         rospy.loginfo(path)
         return path
@@ -693,16 +689,7 @@ class PathPlanner:
             change_direction = True
 
         return change_direction
-
-        
-        
-
-
-
-
-
-
-        
+   
 
     def path_to_message(self, mapdata: OccupancyGrid, path: list[tuple[int, int]]) -> Path:
         """
@@ -710,7 +697,7 @@ class PathPlanner:
         :param path [[(int,int)]] The path on the grid (a list of tuples)
         :return     [Path]        A Path message (the coordinates are expressed in the world)
         """
-        #original path is in grid returned is in world
+        #original path is in grid, returned is in world
         ### REQUIRED CREDIT
         list_in_world = []
         # for node in range(0,len(path)):
