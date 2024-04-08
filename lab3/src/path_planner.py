@@ -710,8 +710,17 @@ class PathPlanner:
         :param path [[(int,int)]] The path on the grid (a list of tuples)
         :return     [Path]        A Path message (the coordinates are expressed in the world)
         """
+        #original path is in grid returned is in world
         ### REQUIRED CREDIT
+        list_in_world = []
+        # for node in range(0,len(path)):
+        #     list_in_world.append(self.grid_to_world(mapdata,node))
+
+
+        list_in_world = self.path_to_poses(mapdata,path)
+        self.path_solution.publish(list_in_world)
         rospy.loginfo("Returning a Path message")
+        return(list_in_world)
 
 
 
