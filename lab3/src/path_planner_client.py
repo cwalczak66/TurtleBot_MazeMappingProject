@@ -53,11 +53,12 @@ class PathPlannerClient:
         try:
             path_planner_call = rospy.ServiceProxy('plan_path', GetPlan)
             resp = path_planner_call(start, goal, 0)
-            print(resp)
-            """   for robot_path in resp:
-                    robot_path_message = PoseStamped()
-                    self.drive(1.0, 1.0)
-                    self.go_to(robot_path) """
+            for robot_path in resp.plan.poses:
+                #robot_path_message = PoseStamped()
+            #    self.drive(1.0, 1.0)
+                self.go_to(robot_path)
+                rospy.sleep(.5)
+                print("FINISHED GO_TO")
             return resp
 
         except rospy.ServiceException as e:
