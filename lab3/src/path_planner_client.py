@@ -55,9 +55,9 @@ class PathPlannerClient:
             resp = path_planner_call(start, goal, 0)
             for robot_path in resp.plan.poses:
                 #robot_path_message = PoseStamped()
-            #    self.drive(1.0, 1.0)
-                self.go_to(robot_path)
-                rospy.sleep(.5)
+                self.drive(1.0, 1.0)
+            #    self.go_to(robot_path)
+                rospy.sleep(1)
                 print("FINISHED GO_TO")
             return resp
 
@@ -69,17 +69,18 @@ class PathPlannerClient:
     # UPDATES ROBOT CURRENT POSITION AND ORIENTATION SO OTHER FUNCTIONS KNOW WHERE TB IS IN REAL TIME
     def update_odometry(self, odom_msg: Odometry):
 
-        # px = msg.pose.pose.position.x
-        # py = msg.pose.pose.position.y
-        # quat_orig = msg.pose.pose.orientation
-        # quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
-        # (roll, pitch, yaw) = euler_from_quaternion(quat_list)
-        # pth = yaw
+        px = odom_msg.pose.pose.position.x
+        py = odom_msg.pose.pose.position.y
+        quat_orig = odom_msg.pose.pose.orientation
+        quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
+        (roll, pitch, yaw) = euler_from_quaternion(quat_list)
+        self.pth = yaw
 
         pose_stamped_msg = PoseStamped()
         pose_stamped_msg.header = odom_msg.header
         pose_stamped_msg.pose = odom_msg.pose.pose
         self.start_pose = pose_stamped_msg
+        
         
 
 #SENDS DESIRED MOTOR SPEED AS A TWIST MSG
