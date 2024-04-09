@@ -147,7 +147,8 @@ class PathPlannerClient:
             while angle_difference < -pi:
                 angle_difference = angle_difference + 2*pi
             rate.sleep()
-            
+            p = abs(angle_difference)/3.14
+
             if abs(angle_difference) <= ang_tol:
                 self.send_speed(0.0,0.0)
                 rospy.sleep(0.5)
@@ -157,9 +158,9 @@ class PathPlannerClient:
             else:
                 # Normalizing angle difference to range btw pi and -pi
                 if angle_difference > 0:    
-                    self.send_speed(0, aspeed) #clockwise
+                    self.send_speed(0, aspeed*p) #clockwise
                 else:
-                    self.send_speed(0, -aspeed) #anticlockwise
+                    self.send_speed(0, -aspeed*p) #anticlockwise
                 rospy.sleep(0.5)
         
         self.send_speed(0,0)
