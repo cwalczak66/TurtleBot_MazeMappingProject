@@ -70,39 +70,6 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        base_footprint:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        base_scan:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        caster_back_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        imu_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        wheel_left_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        wheel_right_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
@@ -161,8 +128,6 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        base_footprint:
-          Value: true
         map:
           Value: true
         odom:
@@ -176,8 +141,7 @@ Visualization Manager:
       Tree:
         map:
           odom:
-            base_footprint:
-              {}
+            {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -213,24 +177,24 @@ Visualization Manager:
       Topic: /plan_path/solution_path
       Unreliable: false
       Value: true
-    - Alpha: 1
+    - Alpha: 0.10000000149011612
       Class: rviz/GridCells
       Color: 0; 100; 250
-      Enabled: false
+      Enabled: true
       Name: GridCells
       Queue Size: 10
-      Topic: /plan_path/astar/expandedCells
+      Topic: /plan_path/cell_visited_astar
       Unreliable: false
-      Value: false
+      Value: true
     - Alpha: 1
       Class: rviz/GridCells
       Color: 250; 10; 0
-      Enabled: false
+      Enabled: true
       Name: GridCells
       Queue Size: 10
       Topic: /plan_path/cspace
       Unreliable: false
-      Value: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -258,7 +222,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 0.005000051110982895
+      Angle: 3.125000476837158
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -268,10 +232,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 72.2923583984375
+      Scale: -108.85453796386719
       Target Frame: <Fixed Frame>
-      X: 0.961355447769165
-      Y: 0.8557445406913757
+      X: 0.637493908405304
+      Y: 0.30321332812309265
     Saved: ~
 Window Geometry:
   Displays:
@@ -289,5 +253,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 2484
-  X: 558
-  Y: 80
+  X: 583
+  Y: 369

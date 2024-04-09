@@ -104,9 +104,11 @@ class PathPlanner:
         """
         ### REQUIRED CREDIT
         map_resolution = mapdata.info.resolution
-        # print("P = ",p)
+        print(map_resolution)
         world_coordinate_x = (p[0] + 0.5) * map_resolution + mapdata.info.origin.position.x
         world_coordinate_y = (p[1] + 0.5) * map_resolution + mapdata.info.origin.position.y
+
+        
 
         retval = Point()
         retval.x = world_coordinate_x
@@ -150,14 +152,62 @@ class PathPlanner:
         """
         
         ### REQUIRED CREDIT
-        path_list = []
-        for cell_coordinates in path:
-            world_coordinates = PathPlanner.grid_to_world(mapdata, cell_coordinates) #use class name to call static methods
-            world_point = Point(world_coordinates[0], world_coordinates[1])
-            world_pose = Pose(world_point)
-            path_list.append(world_pose)
+       
+        poses_list = []
+        previous = None
+        for node in path:
+            new_pose = PoseStamped()
+            new_pose.header.frame_id = "map"
+            if previous is not None:
+                
+                # new_pose.pose.position.x = PathPlanner.grid_to_world(mapdata, node).x - mapdata.info.origin.position.x -0.5
+                # new_pose.pose.position.y = PathPlanner.grid_to_world(mapdata, node).y - mapdata.info.origin.position.y -0.5
+                new_pose.pose.position.x = node[0]*mapdata.info.resolution
+                new_pose.pose.position.y = node[1]*mapdata.info.resolution
 
-        return path_list
+                if (node[0] == previous[0] and node[1] > previous[1]): #North
+                    new_pose.pose.orientation.z = 0.707
+                    new_pose.pose.orientation.w = 0.707
+                if (node[0] == previous[0] and node[1] < previous[1]): #South
+                    
+                    new_pose.pose.orientation.z = -0.707
+                    new_pose.pose.orientation.w = 0.707
+                if (node[0] > previous[0] and node[1] == previous[1]): #East
+                    
+                    new_pose.pose.orientation.w = 1.0
+                if (node[0] < previous[0] and node[1] == previous[1]): #west
+                    new_pose.pose.orientation.z = 1.0
+
+                
+
+
+                if(node[0] > previous[0] and node[1] > previous[1]): #NE
+                    
+                    new_pose.pose.orientation.w = 0.924
+                    new_pose.pose.orientation.z = 0.383
+                if(node[0] < previous[0] and node[1] > previous[1]): #NW
+                    new_pose.pose.orientation.w = 0.383
+                    new_pose.pose.orientation.z = 0.924
+                if(node[0] > previous[0] and node[1] < previous[1]): #SE
+                    new_pose.pose.orientation.w = 0.924
+                    new_pose.pose.orientation.z = -0.383
+                if(node[0] < previous[0] and node[1] < previous[1]): #SW
+                    new_pose.pose.orientation.w = 0.383
+                    new_pose.pose.orientation.z = -0.924
+                    
+                   
+            else:
+                # new_pose.pose.position.x = PathPlanner.grid_to_world(mapdata, node).x - mapdata.info.origin.position.x 
+                # new_pose.pose.position.y = PathPlanner.grid_to_world(mapdata, node).y - mapdata.info.origin.position.y
+                new_pose.pose.position.x = node[0]*mapdata.info.resolution
+                new_pose.pose.position.y = node[1]*mapdata.info.resolution
+                new_pose.pose.orientation.w = 1.0
+
+            poses_list.append(new_pose)
+            previous = node
+
+        
+        return poses_list
         
     
 
@@ -563,63 +613,61 @@ class PathPlanner:
         path = self.reconstruct_path(mapdata, came_from, start, goal)
         self.cells_visited_astar.publish(self.makeDisplayMsg(mapdata, path))
         
-        path_msg = Path()
-        path_msg.header.frame_id = "map"
-        path_msg.header.stamp = rospy.Time.now()
-        poses_list = []
-        previous = None
-        for node in path:
-            new_pose = PoseStamped()
-            new_pose.header.frame_id = "map"
-            if previous is not None:
+        # path_msg = Path()
+        # path_msg.header.frame_id = "map"
+        # path_msg.header.stamp = rospy.Time.now()
+        # poses_list = []
+        # previous = None
+        # for node in path:
+        #     new_pose = PoseStamped()
+        #     new_pose.header.frame_id = "map"
+        #     if previous is not None:
                 
-                new_pose.pose.position.x = float(node[0]) * 0.3
-                new_pose.pose.position.y = float(node[1]) * 0.3
+        #         new_pose.pose.position.x = float(node[0]) * 0.3
+        #         new_pose.pose.position.y = float(node[1]) * 0.3
 
-                if (node[0] == previous[0] and node[1] > previous[1]): #North
-                    new_pose.pose.orientation.z = 0.707
-                    new_pose.pose.orientation.w = 0.707
-                if (node[0] == previous[0] and node[1] < previous[1]): #South
+        #         if (node[0] == previous[0] and node[1] > previous[1]): #North
+        #             new_pose.pose.orientation.z = 0.707
+        #             new_pose.pose.orientation.w = 0.707
+        #         if (node[0] == previous[0] and node[1] < previous[1]): #South
                     
-                    new_pose.pose.orientation.z = -0.707
-                    new_pose.pose.orientation.w = 0.707
-                if (node[0] > previous[0] and node[1] == previous[1]): #East
+        #             new_pose.pose.orientation.z = -0.707
+        #             new_pose.pose.orientation.w = 0.707
+        #         if (node[0] > previous[0] and node[1] == previous[1]): #East
                     
-                    new_pose.pose.orientation.w = 1.0
-                if (node[0] < previous[0] and node[1] == previous[1]): #west
-                    new_pose.pose.orientation.z = 1.0
+        #             new_pose.pose.orientation.w = 1.0
+        #         if (node[0] < previous[0] and node[1] == previous[1]): #west
+        #             new_pose.pose.orientation.z = 1.0
 
                 
 
 
-                if(node[0] > previous[0] and node[1] > previous[1]): #NE
+        #         if(node[0] > previous[0] and node[1] > previous[1]): #NE
                     
-                    new_pose.pose.orientation.w = 0.924
-                    new_pose.pose.orientation.z = 0.383
-                    print("nw")
-                if(node[0] < previous[0] and node[1] > previous[1]): #NW
-                    new_pose.pose.orientation.w = 0.383
-                    new_pose.pose.orientation.z = 0.924
-                if(node[0] > previous[0] and node[1] < previous[1]): #SE
-                    print("se")
-                    new_pose.pose.orientation.w = 0.924
-                    new_pose.pose.orientation.z = -0.383
-                if(node[0] < previous[0] and node[1] < previous[1]): #SW
-                    new_pose.pose.orientation.w = 0.383
-                    new_pose.pose.orientation.z = -0.924
-                    # new_pose.pose.orientation.w = 0.924
-                    # new_pose.pose.orientation.z = -0.383
+        #             new_pose.pose.orientation.w = 0.924
+        #             new_pose.pose.orientation.z = 0.383
+        #         if(node[0] < previous[0] and node[1] > previous[1]): #NW
+        #             new_pose.pose.orientation.w = 0.383
+        #             new_pose.pose.orientation.z = 0.924
+        #         if(node[0] > previous[0] and node[1] < previous[1]): #SE
+        #             new_pose.pose.orientation.w = 0.924
+        #             new_pose.pose.orientation.z = -0.383
+        #         if(node[0] < previous[0] and node[1] < previous[1]): #SW
+        #             new_pose.pose.orientation.w = 0.383
+        #             new_pose.pose.orientation.z = -0.924
+        #             # new_pose.pose.orientation.w = 0.924
+        #             # new_pose.pose.orientation.z = -0.383
                    
-            else:
-                new_pose.pose.position.x = 4.8
-                new_pose.pose.position.y = 4.8
-                new_pose.pose.orientation.w = 1.0
+        #     else:
+        #         new_pose.pose.position.x = 4.8
+        #         new_pose.pose.position.y = 4.8
+        #         new_pose.pose.orientation.w = 1.0
 
-            poses_list.append(new_pose)
-            previous = node
+        #     poses_list.append(new_pose)
+        #     previous = node
 
-        path_msg.poses = poses_list
-        self.path_solution.publish(path_msg)            
+        # path_msg.poses = poses_list
+        # #self.path_solution.publish(path_msg)            
 
     #    self.cells_visited_astar.publish(grid_cell_msg)
         rospy.loginfo(path)
@@ -654,17 +702,32 @@ class PathPlanner:
         :return     [[(x,y)]] The optimized path as a list of tuples (grid coordinates)
         """
         rospy.loginfo("Optimizing path")
-        rm_node = False
+        rm_node = True
         current = None
+        direction = "E"
+        optimized_path = copy.deepcopy(path)
+        
         for i in range(len(path) - 1):
             current = path[i]
             next = path[i+1]
+            new_direction = PathPlanner.check_change_direction(direction, next, current)
+            if direction == new_direction:
+                print("direction is the same, removing node: " + str(current) + " direction: " + new_direction)
+                rospy.loginfo(current)
+                optimized_path.remove(current)
+            direction = PathPlanner.check_change_direction(direction, next, current)
+                
+        
+        rospy.loginfo(optimized_path)
+        return optimized_path
+                
+          
+                
             
-            rm_node = PathPlanner.check_change_direction()
         
             
     def check_change_direction(direction, a: list[tuple[int, int]], b: list[tuple[int, int]]):
-        change_direction = False
+        
         current_direction = None
 
         if (a[0] == b[0] and a[1] > b[1]):
@@ -682,13 +745,12 @@ class PathPlanner:
             current_direction = "SE"
         if (a[0] < b[0] and a[1] < b[1]):
             current_direction = "SW"
-        if (a[0] > b[0] and a[1] < b[1]):
+        if (a[0] < b[0] and a[1] > b[1]):
             current_direction = "NW"
         
-        if current_direction != direction:
-            change_direction = True
+        print(current_direction)
 
-        return change_direction
+        return current_direction
    
 
     def path_to_message(self, mapdata: OccupancyGrid, path: list[tuple[int, int]]) -> Path:
@@ -699,15 +761,18 @@ class PathPlanner:
         """
         #original path is in grid, returned is in world
         ### REQUIRED CREDIT
-        list_in_world = []
-        # for node in range(0,len(path)):
-        #     list_in_world.append(self.grid_to_world(mapdata,node))
+        
 
+        poses_list = self.path_to_poses(mapdata,path)
 
-        list_in_world = self.path_to_poses(mapdata,path)
-        self.path_solution.publish(list_in_world)
+        path_msg = Path()
+        path_msg.header.frame_id = "map"
+        path_msg.header.stamp = rospy.Time.now()
+        path_msg.poses = poses_list
+            
+        
         rospy.loginfo("Returning a Path message")
-        return(list_in_world)
+        return(path_msg)
 
 
 
@@ -746,9 +811,10 @@ class PathPlanner:
 
 
         ## Optimize waypoints
-        #waypoints = PathPlanner.optimize_path(path)
+        waypoints = PathPlanner.optimize_path(path)
         ## Return a Path message
-        #return self.path_to_message(cspacedata, waypoints)
+        self.path_solution.publish(self.path_to_message(cspacedata, waypoints)) 
+        return self.path_to_message(cspacedata, waypoints)
 
 
     
