@@ -322,27 +322,6 @@ class PathPlanner:
 
         cell_neighbours8 = []
         cell_neighbours8 = PathPlanner.neighbors_of_4(mapdata,p)
-        
-      
-        # cell_topRightcorner = (cell_neighbours8[0][0]+1, cell_neighbours8[0][1])
-        # if PathPlanner.is_cell_walkable(mapdata, cell_topRightcorner):
-            
-        #     cell_neighbours8.append(cell_topRightcorner)
-
-        # cell_topLeftcorner = (cell_neighbours8[0][0]-1, cell_neighbours8[0][1])
-        # if PathPlanner.is_cell_walkable(mapdata, cell_topLeftcorner):
-        #     cell_neighbours8.append(cell_topLeftcorner)
-
-        # cell_bottomRightcorner = (cell_neighbours8[1][0]+1, cell_neighbours8[1][1])
-        # if PathPlanner.is_cell_walkable(mapdata, cell_bottomRightcorner):
-        #     cell_neighbours8.append(cell_bottomRightcorner)
-
-        # cell_bottomLeftcorner = (cell_neighbours8[1][0]-1, cell_neighbours8[1][1])
-        # if PathPlanner.is_cell_walkable(mapdata, cell_bottomLeftcorner):
-        #     cell_neighbours8.append(cell_bottomLeftcorner)
-
-        
-
 
         cell_topRightcorner = (p[0]+1, p[1]+1)
         if PathPlanner.is_cell_walkable(mapdata, cell_topRightcorner):
@@ -435,31 +414,6 @@ class PathPlanner:
             curr_mapData.data = list(new_mapData.data)
         # cspace_mapData = copy.deepcopy(padded_map_list)                    
                 
-                
-
-      
-
-        """ for dx in range(-padding, padding + 1):
-                    for dy in range(-padding, padding + 1):
-                        # Skip the current cell
-                        if dx == 0 and dy == 0:
-                            continue
-                    
-                        # Calculate the neighbor coordinates
-                        neighbor_x = cell_coordinate_x + dx
-                        neighbor_y = cell_coordinate_y + dy
-                        neighbour_coordinate = (neighbor_x, neighbor_y)
-                    #    print(neighbour_coordinate)
-
-                        if 0 <= neighbor_x < mapdata.info.width and 0 <= neighbor_y < mapdata.info.height:
-                            # Calculate the index of the neighbor cell
-                        #    neighbor_index = neighbor_y * mapdata.info.width + neighbor_x
-                            neighbor_index = self.grid_to_index(mapdata,neighbour_coordinate)
-
-                            if cspace_mapData.data[neighbor_index] < 100:
-                                cspace_mapData.data[neighbor_index] = 100 
-                                padded_map_list.append(neighbour_coordinate)
-                     #           print(padded_map_list) """
         # mapdata = cspace_mapData
         print(padded_map_list)
         print(mapdata)
@@ -467,82 +421,6 @@ class PathPlanner:
         ## Return the C-space
         return curr_mapData 
         
-
-    # def calc_cspace(self, mapdata: OccupancyGrid, padding: int) -> OccupancyGrid:
-    #     """
-    #     Calculates the C-Space, i.e., makes the obstacles in the map thicker.
-    #     Publishes the list of cells that were added to the original map.
-    #     :param mapdata [OccupancyGrid] The map data.
-    #     :param padding [int]           The number of cells around the obstacles.
-    #     :return        [OccupancyGrid] The C-Space.
-    #     """
-    #     ### REQUIRED CREDIT
-    #     rospy.loginfo("Calculating C-Space")
-    #     ## Go through each cell in the occupancy grid
-    #     ## Inflate the obstacles where necessary
-    #     ## Create a GridCells message and publish it
-    #     ## Return the C-space
-
-    #     map_width = mapdata.info.width
-    #     cspace_mapData = copy.deepcopy(mapdata)
-    #     cspace_mapData.data = list(cspace_mapData.data)
-    #     padded_map_list = []
-
-    #     for amt_padded in range(0,padding):
-    #         padded_map_list = []
-    #         for cell_index in range(len(mapdata.data)):
-    #             value = mapdata.data[cell_index]
-    #             if value > 50: # Identifying any value above 50 in the occupancy grid as obstacle
-    #                 cell_coordinate_y = int(cell_index / map_width)
-    #                 cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
-    #                 cell_coordinate = (cell_coordinate_x, cell_coordinate_y)
-    #                 print(cell_coordinate)
-    #                 print(value)
-    #                 padded_map_list.append(cell_coordinate)
-    #             #    print(padded_map_list)
-    #         #print(padded_map_list)
-
-    #                 for coordinate in PathPlanner.neighbors_of_8(mapdata, cell_coordinate):
-    #                     # new_mapData.data[PathPlanner.grid_to_index(new_mapData, thick)] = 100 # increasing the cell thickness by 100 (1 cell)
-    #                     coordinate_index = self.grid_to_index(mapdata, coordinate)
-    #                     if coordinate_index is not None:
-    #                         cspace_mapData.data[coordinate_index] = 100 
-    #                         padded_map_list.append(coordinate)
-                            
-    #     # cspace_mapData = copy.deepcopy(padded_map_list)                    
-                
-                
-
-      
-
-    #     """ for dx in range(-padding, padding + 1):
-    #                 for dy in range(-padding, padding + 1):
-    #                     # Skip the current cell
-    #                     if dx == 0 and dy == 0:
-    #                         continue
-                    
-    #                     # Calculate the neighbor coordinates
-    #                     neighbor_x = cell_coordinate_x + dx
-    #                     neighbor_y = cell_coordinate_y + dy
-    #                     neighbour_coordinate = (neighbor_x, neighbor_y)
-    #                 #    print(neighbour_coordinate)
-
-    #                     if 0 <= neighbor_x < mapdata.info.width and 0 <= neighbor_y < mapdata.info.height:
-    #                         # Calculate the index of the neighbor cell
-    #                     #    neighbor_index = neighbor_y * mapdata.info.width + neighbor_x
-    #                         neighbor_index = self.grid_to_index(mapdata,neighbour_coordinate)
-
-    #                         if cspace_mapData.data[neighbor_index] < 100:
-    #                             cspace_mapData.data[neighbor_index] = 100 
-    #                             padded_map_list.append(neighbour_coordinate)
-    #                  #           print(padded_map_list) """
-    #     # mapdata = cspace_mapData
-    #     print(padded_map_list)
-#
-
-        # self.cspace_pub.publish(self.makeDisplayMsg(cspace_mapData,padded_map_list))
-        # ## Return the C-space
-        # return cspace_mapData 
     
 
     def heuristic(self, a: tuple[int,int], b: tuple[int,int]) -> int:
@@ -613,63 +491,7 @@ class PathPlanner:
         path = self.reconstruct_path(mapdata, came_from, start, goal)
         self.cells_visited_astar.publish(self.makeDisplayMsg(mapdata, path))
         
-        # path_msg = Path()
-        # path_msg.header.frame_id = "map"
-        # path_msg.header.stamp = rospy.Time.now()
-        # poses_list = []
-        # previous = None
-        # for node in path:
-        #     new_pose = PoseStamped()
-        #     new_pose.header.frame_id = "map"
-        #     if previous is not None:
-                
-        #         new_pose.pose.position.x = float(node[0]) * 0.3
-        #         new_pose.pose.position.y = float(node[1]) * 0.3
-
-        #         if (node[0] == previous[0] and node[1] > previous[1]): #North
-        #             new_pose.pose.orientation.z = 0.707
-        #             new_pose.pose.orientation.w = 0.707
-        #         if (node[0] == previous[0] and node[1] < previous[1]): #South
-                    
-        #             new_pose.pose.orientation.z = -0.707
-        #             new_pose.pose.orientation.w = 0.707
-        #         if (node[0] > previous[0] and node[1] == previous[1]): #East
-                    
-        #             new_pose.pose.orientation.w = 1.0
-        #         if (node[0] < previous[0] and node[1] == previous[1]): #west
-        #             new_pose.pose.orientation.z = 1.0
-
-                
-
-
-        #         if(node[0] > previous[0] and node[1] > previous[1]): #NE
-                    
-        #             new_pose.pose.orientation.w = 0.924
-        #             new_pose.pose.orientation.z = 0.383
-        #         if(node[0] < previous[0] and node[1] > previous[1]): #NW
-        #             new_pose.pose.orientation.w = 0.383
-        #             new_pose.pose.orientation.z = 0.924
-        #         if(node[0] > previous[0] and node[1] < previous[1]): #SE
-        #             new_pose.pose.orientation.w = 0.924
-        #             new_pose.pose.orientation.z = -0.383
-        #         if(node[0] < previous[0] and node[1] < previous[1]): #SW
-        #             new_pose.pose.orientation.w = 0.383
-        #             new_pose.pose.orientation.z = -0.924
-        #             # new_pose.pose.orientation.w = 0.924
-        #             # new_pose.pose.orientation.z = -0.383
-                   
-        #     else:
-        #         new_pose.pose.position.x = 4.8
-        #         new_pose.pose.position.y = 4.8
-        #         new_pose.pose.orientation.w = 1.0
-
-        #     poses_list.append(new_pose)
-        #     previous = node
-
-        # path_msg.poses = poses_list
-        # #self.path_solution.publish(path_msg)            
-
-    #    self.cells_visited_astar.publish(grid_cell_msg)
+ 
         rospy.loginfo(path)
         return path
     
