@@ -17,15 +17,17 @@ class PathPlannerClient:
         # suscribing to 2d nav goal 
         rospy.init_node("path_planner_client")
         print("starting client")
+
         rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.path_planner_client)
         rospy.Subscriber('/odom', Odometry, self.update_odometry)
         self.start_pose = PoseStamped()
 
-        rospy.Subscriber('/odom', Odometry, self.update_odometry)
 
         ### Tell ROS that this node subscribes to PoseStamped messages on the '/move_base_simple/goal' topic
         ### When a message is received, call self.go_to
-        rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.go_to)
+    #    rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.go_to)
+
+        self.cmd_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
 
         #self.xpose = PoseStamped.pose #.position.x
         #print(self.xpose)
@@ -51,12 +53,11 @@ class PathPlannerClient:
         try:
             path_planner_call = rospy.ServiceProxy('plan_path', GetPlan)
             resp = path_planner_call(start, goal, 0)
-            for robot_path in resp:
+            print(resp)
+            """   for robot_path in resp:
                     robot_path_message = PoseStamped()
-                    robot_position = Pose.position 
-                    robot_orientation = Pose.orientation
-
-                    self.go_to(robot_path)
+                    self.drive(1.0, 1.0)
+                    self.go_to(robot_path) """
             return resp
 
         except rospy.ServiceException as e:
