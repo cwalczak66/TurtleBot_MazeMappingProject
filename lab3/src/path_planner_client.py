@@ -63,11 +63,7 @@ class PathPlannerClient:
                 self.go_to(waypoint)
                 step = step + 1
                 
-            for robot_path in resp.plan.poses:
-                #robot_path_message = PoseStamped()
-                self.drive(1.0, 1.0)
-            #    self.go_to(robot_path)
-                rospy.sleep(1)
+            
                 print("FINISHED GO_TO")
 
             return resp
@@ -126,7 +122,7 @@ class PathPlannerClient:
         rospy.wait_for_message("/odom", Odometry)
         initialPose_x = self.px
         initialPose_y = self.py
-        distanceTolerance = 0.1
+        distanceTolerance = 0.05
         curr_distance = 0.0
         rate = rospy.Rate(10) # Publish rate of 10Hz
         while (not rospy.is_shutdown()) and (abs(distance - curr_distance) >= distanceTolerance):
