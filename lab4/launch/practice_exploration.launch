@@ -3,12 +3,13 @@
 
   <!--gmapping. We don't need mapserver if gmapping is running -->
   <include file="$(find turtlebot3_slam)/launch/turtlebot3_slam.launch" />
+  <!--RUN roslaunch turtlebot3_slam turtlebot3_slam.launch-->
 
   <!-- AMCL -->
   <include file="$(find turtlebot3_navigation)/launch/amcl.launch"/>
 
   <!-- move_base -->
-  <arg name="cmd_vel_topic" default="cmd_vel" />
+  <!-- <arg name="cmd_vel_topic" default="cmd_vel" />
   <arg name="odom_topic" default="odom" />
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
     <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
@@ -21,6 +22,6 @@
     <rosparam file="$(find turtlebot3_navigation)/param/dwa_local_planner_params_$(arg model).yaml" command="load" />
 
     <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
-    <remap from="odom" to="$(arg odom_topic)"/>
-  </node>
+    <remap from="odom" to="$(arg odom_topic)"/> -->
+  <!-- </node> -->
 </launch>
