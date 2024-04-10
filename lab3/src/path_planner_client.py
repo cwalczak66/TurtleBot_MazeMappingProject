@@ -63,6 +63,11 @@ class PathPlannerClient:
                 self.go_to(waypoint)
                 step = step + 1
                 
+            for robot_path in resp.plan.poses:
+                #robot_path_message = PoseStamped()
+                self.drive(1.0, 1.0)
+            #    self.go_to(robot_path)
+                rospy.sleep(1)
                 print("FINISHED GO_TO")
 
             return resp

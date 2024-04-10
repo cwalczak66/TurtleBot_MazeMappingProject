@@ -603,7 +603,7 @@ class PathPlanner:
 
 
         
-    def plan_path_handler(self, msg):
+    def plan_path_handler(self, msg:PoseStamped):
         """
         Plans a path between the start and goal locations in the requested.
         Internally uses A* to plan the optimal path.
