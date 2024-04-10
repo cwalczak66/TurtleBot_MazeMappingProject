@@ -53,12 +53,18 @@ class PathPlannerClient:
         try:
             path_planner_call = rospy.ServiceProxy('plan_path', GetPlan)
             resp = path_planner_call(start, goal, 0)
-            for robot_path in resp.plan.poses:
-                #robot_path_message = PoseStamped()
-            #    self.drive(1.0, 1.0)
-                self.go_to(robot_path)
-                rospy.sleep(.5)
+            #rospy.loginfo(resp.plan.poses)
+            step = 1
+            for waypoint in resp.plan.poses:
+
+                
+                print("STEP "+ str(step))
+                print("")
+                self.go_to(waypoint)
+                step = step + 1
+                
                 print("FINISHED GO_TO")
+
             return resp
 
         except rospy.ServiceException as e:
@@ -68,18 +74,24 @@ class PathPlannerClient:
     
     # UPDATES ROBOT CURRENT POSITION AND ORIENTATION SO OTHER FUNCTIONS KNOW WHERE TB IS IN REAL TIME
     def update_odometry(self, odom_msg: Odometry):
+        
+        
+        self.px = odom_msg.pose.pose.position.x + 4.8
+        self.py = odom_msg.pose.pose.position.y + 4.8
+        quat_orig = odom_msg.pose.pose.orientation
+        quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
+        (roll, pitch, yaw) = euler_from_quaternion(quat_list)
+        self.pth = yaw
 
-        # px = msg.pose.pose.position.x
-        # py = msg.pose.pose.position.y
-        # quat_orig = msg.pose.pose.orientation
-        # quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
-        # (roll, pitch, yaw) = euler_from_quaternion(quat_list)
-        # pth = yaw
+        #print("x: " + str(self.px) + "y: " + str(self.py) + "yaw: " + str(self.pth))
 
-        pose_stamped_msg = PoseStamped()
-        pose_stamped_msg.header = odom_msg.header
-        pose_stamped_msg.pose = odom_msg.pose.pose
-        self.start_pose = pose_stamped_msg
+
+
+
+        # pose_stamped_msg = PoseStamped()
+        # pose_stamped_msg.header = odom_msg.header
+        # pose_stamped_msg.pose = odom_msg.pose.pose
+        # self.start_pose = pose_stamped_msg
         
 
 #SENDS DESIRED MOTOR SPEED AS A TWIST MSG
@@ -117,7 +129,7 @@ class PathPlannerClient:
             self.send_speed(linear_speed, 0.0)
             rate.sleep()
             curr_distance = abs(sqrt(pow(self.py - initialPose_y, 2 ) + (pow(self.px - initialPose_x, 2))**2))
-            #rospy.loginfo(f'distance to target: {abs(distance - curr_distance)}')
+            rospy.loginfo(f'distance to target: {abs(distance - curr_distance)}')
         self.send_speed(0.0, 0.0)
         print("reached target distance")
 
@@ -174,29 +186,45 @@ class PathPlannerClient:
         :param msg [PoseStamped] The target pose.
         """
         ### REQUIRED CREDIT
+        rospy.wait_for_message("/odom", Odometry)
+        #rospy.loginfo(msg)
         target_x = msg.pose.position.x
         target_y = msg.pose.position.y 
-        delta_y = target_y - self.px
-        delta_x = target_x - self.py
+        delta_y = target_y - self.py
+        delta_x = target_x - self.px 
         quat_orig = msg.pose.orientation
         quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
         (roll, pitch, yaw) = euler_from_quaternion(quat_list)
-        angle_to_pose = atan2(delta_y, delta_x)
 
+        angle_to_pose = atan2(delta_y, delta_x)
+        rospy.loginfo("target x = " + str(target_x) + " target y = " + str(target_y))
+        rospy.loginfo("current x = " + str(self.px) + " current y = " + str(self.py))
+        rospy.loginfo("delta x = " + str(delta_x) + " delta y = " + str(delta_y))
+        
         # Rotate to look at target location
-        self.rotate(angle_to_pose, 0.3)
+        self.rotate(angle_to_pose, 0.1)
         print("rotation 1 complete!")
-        rospy.sleep(0.5)
+        rospy.sleep(1)
 
         # Drive to target location
-        distance_to_target = abs(sqrt(pow(delta_y, 2 ) + (pow(delta_x, 2))**2))
-        self.drive(distance_to_target, 0.5)
+
+        distance_to_target = abs(sqrt(pow(delta_y, 2) + (pow(delta_x, 2))**2))
+        self.drive(distance_to_target, 0.1)
         print("Reached target location!")
         rospy.sleep(0.7)
 
+
+
         # Rotate to target orientation
-        self.rotate(yaw, 0.3)
+        self.rotate(yaw, 0.1)
         print("Reached target pose!")
+
+
+        print("")
+        rospy.loginfo("target x = " + str(target_x) + " target y = " + str(target_y))
+        rospy.loginfo("current x = " + str(self.px) + " current y = " + str(self.py))
+        print("")
+        print("")
 
     
     def run(self):

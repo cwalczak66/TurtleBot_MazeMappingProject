@@ -206,6 +206,8 @@ class PathPlanner:
             poses_list.append(new_pose)
             previous = node
 
+            rospy.loginfo(new_pose)
+
         
         return poses_list
         
@@ -636,6 +638,8 @@ class PathPlanner:
         waypoints = PathPlanner.optimize_path(path)
         ## Return a Path message
         self.path_solution.publish(self.path_to_message(cspacedata, waypoints)) 
+
+        
         return self.path_to_message(cspacedata, waypoints)
 
 
