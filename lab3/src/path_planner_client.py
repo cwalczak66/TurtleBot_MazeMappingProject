@@ -40,7 +40,7 @@ class PathPlannerClient:
 
 
 
-
+# CALLS UP THE PATH PLANNER SERVER TO GET THE SHORTEST PATH TO GET TO THE GOAL
     def path_planner_client(self, msg: PoseStamped): 
     
         rospy.wait_for_service('plan_path')
