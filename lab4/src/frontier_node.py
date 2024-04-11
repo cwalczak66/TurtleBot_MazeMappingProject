@@ -32,7 +32,7 @@ class FrontierNode:
     #returns a poseStamped?(a place in the frontier to navigate to)
     def frontier_path_handler(self, map:OccupancyGrid):
         #requestion map from gmapping
-        map = get_map()
+        #map = get_map()
         #do something with map to find a place to go in frontier based on occupancy grid
 
         
