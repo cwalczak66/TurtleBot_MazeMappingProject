@@ -18,9 +18,6 @@ class FrontierNode:
         rospy.init_node("frontier_node")
         # rospy.Subscriber('/map', OccupancyGrid, self.frontier)
 
-        
-        self.frontier_cspace = rospy.Service('map', OccupancyGrid, self.calc_cspace)
-
         #gets map from gmapping node
         rospy.Subscriber('/map', OccupancyGrid, self.update_map)
 
