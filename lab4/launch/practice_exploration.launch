@@ -6,7 +6,11 @@
   <!--RUN roslaunch turtlebot3_slam turtlebot3_slam.launch-->
 
   <!-- AMCL -->
+<<<<<<< HEAD
   <!-- <include file="$(find turtlebot3_navigation)/launch/amcl.launch"/> -->
+=======
+  <!--include file="$(find turtlebot3_navigation)/launch/amcl.launch"/ -->
+>>>>>>> 02271fc86a6cd1a4f6f722f1c8435ed605cf58e1
 
   <!-- move_base -->
   <!-- <arg name="cmd_vel_topic" default="cmd_vel" />
@@ -25,3 +29,4 @@
     <remap from="odom" to="$(arg odom_topic)"/> -->
   <!-- </node> -->
 </launch>
+>>>>>>> f069389eb3f83bc60d28e80a0c17c11ec6fd1e00

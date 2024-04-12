@@ -57,7 +57,7 @@ class PathPlanner:
         rospy.loginfo("Path planner node ready")
 
         
-
+# RETURNS THE CELL INDEX
     @staticmethod
     def grid_to_index(mapdata: OccupancyGrid, p: tuple[int, int]) -> int:
         """
@@ -72,7 +72,7 @@ class PathPlanner:
         return index
 
 
-
+# CALCULATES EUCLIDIAN DISTANCE
     @staticmethod
     def euclidean_distance(p1: tuple[float, float], p2: tuple[float, float]) -> float:
         """
@@ -93,7 +93,7 @@ class PathPlanner:
         return euclid_distance
         
 
-
+# CONVERTS CELL COORDINATES TO REAL WORLD COORDINATES
     @staticmethod
     def grid_to_world(mapdata: OccupancyGrid, p: tuple[int, int]) -> Point:
         """
@@ -116,7 +116,7 @@ class PathPlanner:
         
         return retval
         
-        
+# CONVERTS REAL WORLD COORDIANTES TO GRID COORDIANTES
     @staticmethod
     def world_to_grid(mapdata: OccupancyGrid, wp: Point) -> tuple[int, int]:
         """
@@ -141,7 +141,7 @@ class PathPlanner:
         
 
 
-        
+# RETURNS A LIST OF POSESTAMPED TO USE FOR THE PATH MESSAGE
     @staticmethod
     def path_to_poses(mapdata: OccupancyGrid, path: list[tuple[int, int]]) -> list[PoseStamped]:
         """
@@ -212,7 +212,7 @@ class PathPlanner:
         return poses_list
         
     
-
+# CHECKS IF CELL IS OPEN/WALKABLE
     @staticmethod
     def is_cell_walkable(mapdata:OccupancyGrid, p: tuple[int, int]) -> bool:
         """
@@ -267,7 +267,7 @@ class PathPlanner:
         
 
 
-
+# RETURNS LIST OF UP DOWN LEFT RIGHT CELLS
     @staticmethod
     def neighbors_of_4(mapdata: OccupancyGrid, p: tuple[int, int]) -> list[tuple[int, int]]:
         """
@@ -307,7 +307,7 @@ class PathPlanner:
 
 
     
-    
+# RETURNS LIST OF EVERY CORNER OF THE MIDDLE CELL
     @staticmethod
     def neighbors_of_8(mapdata: OccupancyGrid, p: tuple[int, int]) -> list[tuple[int, int]]:
         """
@@ -348,7 +348,7 @@ class PathPlanner:
 
 
     
-    
+# GETS THE MAP FROM MAP SERVER
     @staticmethod
     def request_map() -> OccupancyGrid:
         """
@@ -369,6 +369,7 @@ class PathPlanner:
         except rospy.ServiceException as e:
          print("Service call failed: %s"%e)
 
+# CALULATES THE C SPACE WITH A SPECIFIED PADDING FOR THICKNESS AND UPDATES MAP
     def calc_cspace(self, mapdata: OccupancyGrid, padding: int) -> OccupancyGrid:
         """
         Calculates the C-Space, i.e., makes the obstacles in the map thicker.
@@ -424,7 +425,7 @@ class PathPlanner:
         return curr_mapData 
         
     
-
+# HEURISTIC FUNCTION FOR A* (MANHATTAN)
     def heuristic(self, a: tuple[int,int], b: tuple[int,int]) -> int:
         ax = a[0]
         ay = a[1]
@@ -432,7 +433,8 @@ class PathPlanner:
         by = b[1]
 
         return abs(ax-bx) + abs(ay-by) #Manhattan distance
-    
+
+# COST FUNCTION FOR A* (EUCLIDEAN)
     def cost(self, a: tuple[int,int], b: tuple[int,int]) -> int:
 
         
@@ -443,6 +445,8 @@ class PathPlanner:
 
         return sqrt(pow(ax - bx, 2) + pow(ay - by, 2)) #Euclidean distance
 
+
+# RECONSTRUCTS PATH FROM DICTIONARY OF ALL VISITED NODES
     def reconstruct_path(self, mapdata: OccupancyGrid, came_from: list[tuple[int,int]], start: tuple[int, int], goal: tuple[int, int]) -> list[tuple[int, int]]:
 
         current = goal
@@ -458,7 +462,7 @@ class PathPlanner:
         return path
     
     
-    
+# ALGORITHM TO CALCULATE SHORTEST PATH
     def a_star(self, mapdata: OccupancyGrid, start: tuple[int, int], goal: tuple[int, int]) -> list[tuple[int, int]]:
         ### REQUIRED CREDIT
         rospy.loginfo("Executing A* from (%d,%d) to (%d,%d)" % (start[0], start[1], goal[0], goal[1]))
@@ -498,7 +502,7 @@ class PathPlanner:
         return path
     
     
-    
+# HELPER FUNCTION TO MAKE GRIDCELLS DISPLAY MSG
     def makeDisplayMsg(self, mapdata: OccupancyGrid,  list_of_nodes: list[tuple[int, int]]):
         
         point_list: Point = []
@@ -517,7 +521,8 @@ class PathPlanner:
 
         return grid_cell_msg
 
-    
+
+# REMOVES EXTRA NODES AND RETURNS AN OPTIMIZED LIST OF DIRECTIONS FOR ROBOT
     @staticmethod
     def optimize_path(path: list[tuple[int, int]]) -> list[tuple[int, int]]:
         """
@@ -549,7 +554,7 @@ class PathPlanner:
                 
             
         
-            
+# RETURNS THE CURREANT HEADING OF THE A* PATH
     def check_change_direction(direction, a: list[tuple[int, int]], b: list[tuple[int, int]]):
         
         current_direction = None
@@ -577,6 +582,7 @@ class PathPlanner:
         return current_direction
    
 
+# CREATES A PATH AND RETURNS IT TO CLIENT SERVICE CALL
     def path_to_message(self, mapdata: OccupancyGrid, path: list[tuple[int, int]]) -> Path:
         """
         Takes a path on the grid and returns a Path message.
@@ -602,7 +608,7 @@ class PathPlanner:
 
 
 
-        
+# MAIN SERVICE CALL FROM CLIENT SERVER
     def plan_path_handler(self, msg:PoseStamped):
         """
         Plans a path between the start and goal locations in the requested.
@@ -648,13 +654,7 @@ class PathPlanner:
         """
         Runs the node until Ctrl-C is pressed.
         """
-        # self.grid_to_index()
-        # self.euclidean_distance()
-        # self.grid_to_world()
-        # self.is_cell_walkable()
-        # self.neighbors_of_4()
-        # self.neighbors_of_8()
-        # self.a_star()
+
 
         rospy.spin()
 
