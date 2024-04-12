@@ -30,7 +30,7 @@ class PathPlanner:
         ## Create a new service called "plan_path" that accepts messages of
         ## type GetPlan and calls self.plan_path() when a message is received
         self.path_plan_service = rospy.Service('plan_path', GetPlan, self.plan_path_handler)
-
+        self.path_plan_service = rospy.Service('calc_cspace', GetPlan, self.calc_cspace)
         ## Create a publisher for the C-space (the enlarged occupancy grid)
         ## The topic is "/path_planner/cspace", the message type is GridCells
 
@@ -231,9 +231,9 @@ class PathPlanner:
         cell_walkable = True
         cell_free = True
 
-        print("origin x = %s",map_origin_x)
-        print("origin y = %s",map_origin_y)
-        print("boundary= %s", map_boundary_x)
+        # print("origin x = %s",map_origin_x)
+        # print("origin y = %s",map_origin_y)
+        # print("boundary= %s", map_boundary_x)
 
         if(p[0] < map_origin_x or p[0] >= map_origin_x + map_boundary_x or
            p[1] < map_origin_y or p[1] >= map_origin_y + map_boundary_y):
@@ -262,7 +262,6 @@ class PathPlanner:
                 cell_walkable = True
                 #print("cell is walkable")
 
-        #print("cell is walkable")     
         return cell_walkable
         
 
@@ -284,8 +283,6 @@ class PathPlanner:
         map_origin_y = mapdata.info.origin.position.y
         cell_neighbours4 = []
 
-        # if PathPlanner.is_cell_walkable(mapdata, p) == True:
-        #     print("cell_walkable")
         cell_edge_neighbour_top = (p[0], p[1]+1)
         if PathPlanner.is_cell_walkable(mapdata, cell_edge_neighbour_top):
             cell_neighbours4.append(cell_edge_neighbour_top)
@@ -401,8 +398,8 @@ class PathPlanner:
                     cell_coordinate_y = int(cell_index / map_width)
                     cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
                     cell_coordinate = (cell_coordinate_x, cell_coordinate_y)
-                    print(cell_coordinate)
-                    print(value)
+                    # print(cell_coordinate)
+                    # print(value)
                     padded_map_list.append(cell_coordinate)
                 #    print(padded_map_list)
             #print(padded_map_list)
@@ -418,8 +415,8 @@ class PathPlanner:
         # cspace_mapData = copy.deepcopy(padded_map_list)                    
                 
         # mapdata = cspace_mapData
-        print(padded_map_list)
-        print(mapdata)
+        # print(padded_map_list)
+        # print(mapdata)
         self.cspace_pub.publish(self.makeDisplayMsg(curr_mapData,padded_map_list))
         ## Return the C-space
         return curr_mapData 
@@ -466,8 +463,6 @@ class PathPlanner:
     def a_star(self, mapdata: OccupancyGrid, start: tuple[int, int], goal: tuple[int, int]) -> list[tuple[int, int]]:
         ### REQUIRED CREDIT
         rospy.loginfo("Executing A* from (%d,%d) to (%d,%d)" % (start[0], start[1], goal[0], goal[1]))
-        print(mapdata.info.width)
-        print(mapdata.info.height)
         frontier = PriorityQueue()
         frontier.put(start, 0)
         came_from = {}
@@ -590,7 +585,6 @@ class PathPlanner:
         :return     [Path]        A Path message (the coordinates are expressed in the world)
         """
         #original path is in grid, returned is in world
-        ### REQUIRED CREDIT
         
 
         poses_list = self.path_to_poses(mapdata,path)
@@ -608,7 +602,7 @@ class PathPlanner:
 
 
 
-# MAIN SERVICE CALL FROM CLIENT SERVER
+# 
     def plan_path_handler(self, msg:PoseStamped):
         """
         Plans a path between the start and goal locations in the requested.
@@ -617,15 +611,14 @@ class PathPlanner:
         """
         ## Request the map
         ## In case of error, return an empty path
-        #rospy.wait_for_service('map_service')
-        print("In Plan_path!")
+
         mapdata = PathPlanner.request_map()
         if mapdata is None:
             return Path()
         ## Calculate the C-space and publish it
-        print(mapdata.info.resolution)
-        print(mapdata.info.height)
-        print(mapdata.info.width)
+        # print(mapdata.info.resolution)
+        # print(mapdata.info.height)
+        # print(mapdata.info.width)
         cspacedata = self.calc_cspace(mapdata, 1)
         ## Execute A*
 
