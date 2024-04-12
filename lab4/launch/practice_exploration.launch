@@ -6,7 +6,7 @@
   <!--RUN roslaunch turtlebot3_slam turtlebot3_slam.launch-->
 
   <!-- AMCL -->
-  <include file="$(find turtlebot3_navigation)/launch/amcl.launch"/>
+  <!-- <include file="$(find turtlebot3_navigation)/launch/amcl.launch"/> -->
 
   <!-- move_base -->
   <!-- <arg name="cmd_vel_topic" default="cmd_vel" />
