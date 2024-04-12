@@ -39,6 +39,8 @@ class PathPlannerClient:
         self.pth = 0  
 
 
+    
+
 
 # CALLS UP THE PATH PLANNER SERVER TO GET THE SHORTEST PATH TO GET TO THE GOAL
     def path_planner_client(self, msg: PoseStamped): 
@@ -57,14 +59,8 @@ class PathPlannerClient:
             step = 1
             for waypoint in resp.plan.poses:
 
-                
-                print("STEP "+ str(step))
-                print("")
                 self.go_to(waypoint)
                 step = step + 1
-                
-            
-                print("FINISHED GO_TO")
 
             return resp
 
@@ -75,19 +71,12 @@ class PathPlannerClient:
     
     # UPDATES ROBOT CURRENT POSITION AND ORIENTATION SO OTHER FUNCTIONS KNOW WHERE TB IS IN REAL TIME
     def update_odometry(self, odom_msg: Odometry):
-        
-        
         self.px = odom_msg.pose.pose.position.x + 4.8
         self.py = odom_msg.pose.pose.position.y + 4.8
         quat_orig = odom_msg.pose.pose.orientation
         quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
         (roll, pitch, yaw) = euler_from_quaternion(quat_list)
         self.pth = yaw
-
-        #print("x: " + str(self.px) + "y: " + str(self.py) + "yaw: " + str(self.pth))
-
-
-
 
         # pose_stamped_msg = PoseStamped()
         # pose_stamped_msg.header = odom_msg.header
@@ -132,7 +121,6 @@ class PathPlannerClient:
             curr_distance = abs(sqrt(pow(self.py - initialPose_y, 2 ) + (pow(self.px - initialPose_x, 2))**2))
             rospy.loginfo(f'distance to target: {abs(distance - curr_distance)}')
         self.send_speed(0.0, 0.0)
-        print("reached target distance")
 
     
 
@@ -152,8 +140,6 @@ class PathPlannerClient:
             angle_difference = (angle - self.pth)% (2* pi)
             print(f'target angle: {angle * (180/pi)} current angle: {self.pth * (180/pi)} angle difference: {angle_difference * (180/pi)}')
             # Normalizing angle difference to range btw pi and -pi
-            #angle_difference = atan2(sin(angle_difference), cos(angle_difference))
-            #print(angle_difference)
             while angle_difference > pi:
                 angle_difference = angle_difference - 2 * pi
             while angle_difference < -pi:
@@ -175,7 +161,6 @@ class PathPlannerClient:
                 rospy.sleep(0.5)
         
         self.send_speed(0,0)
-        print("robot should stop now")
         self.send_speed(0.0,0.0)
     
 
@@ -220,12 +205,9 @@ class PathPlannerClient:
         self.rotate(yaw, 0.1)
         print("Reached target pose!")
 
+        # rospy.loginfo("target x = " + str(target_x) + " target y = " + str(target_y))
+        # rospy.loginfo("current x = " + str(self.px) + " current y = " + str(self.py))
 
-        print("")
-        rospy.loginfo("target x = " + str(target_x) + " target y = " + str(target_y))
-        rospy.loginfo("current x = " + str(self.px) + " current y = " + str(self.py))
-        print("")
-        print("")
 
     
     def run(self):
