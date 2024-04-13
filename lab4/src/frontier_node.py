@@ -22,13 +22,6 @@ class FrontierNode:
         """
         Runs the node until Ctrl-C is pressed.
         """
-        # self.grid_to_index()
-        # self.euclidean_distance()
-        # self.grid_to_world()
-        # self.is_cell_walkable()
-        # self.neighbors_of_4()
-        # self.neighbors_of_8()
-        # self.a_star()
 
         rospy.spin()
 
