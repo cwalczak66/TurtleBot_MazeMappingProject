@@ -18,8 +18,21 @@ class FrontierNode:
         rospy.init_node("frontier_node")
         # rospy.Subscriber('/map', OccupancyGrid, self.frontier)
 
-        #gets map from gmapping node
-        rospy.Subscriber('/map', OccupancyGrid, self.update_map)
+    def run(self):
+        """
+        Runs the node until Ctrl-C is pressed.
+        """
+        # self.grid_to_index()
+        # self.euclidean_distance()
+        # self.grid_to_world()
+        # self.is_cell_walkable()
+        # self.neighbors_of_4()
+        # self.neighbors_of_8()
+        # self.a_star()
 
-        #update map in rviz
-        self.update_rivz = rospy.Publisher('/map_updates', OccupancyGridUpdates, queue_size=10)
+        rospy.spin()
+
+
+        
+if __name__ == '__main__':
+    FrontierNode.run()
