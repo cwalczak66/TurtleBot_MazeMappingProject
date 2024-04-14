@@ -30,7 +30,7 @@ class PathPlanner:
         ## Create a new service called "plan_path" that accepts messages of
         ## type GetPlan and calls self.plan_path() when a message is received
         self.path_plan_service = rospy.Service('plan_path', GetPlan, self.plan_path_handler)
-        self.c_space_service = rospy.Service('c_space', OccupancyGrid, self.calc_cspace)
+        self.c_space_service = rospy.Service('c_space', GetMap, self.calc_cspace)
 
         ## Create a publisher for the C-space (the enlarged occupancy grid)
         ## The topic is "/path_planner/cspace", the message type is GridCells
@@ -420,7 +420,9 @@ class PathPlanner:
         # mapdata = cspace_mapData
         print(padded_map_list)
         print(mapdata)
+        print("Printing cspace")
         self.cspace_pub.publish(self.makeDisplayMsg(curr_mapData,padded_map_list))
+        
         ## Return the C-space
         return curr_mapData 
         
@@ -656,6 +658,7 @@ class PathPlanner:
         # self.neighbors_of_4()
         # self.neighbors_of_8()
         # self.a_star()
+        self.calc_cspace()
 
         rospy.spin()
 

@@ -3,29 +3,31 @@ from __future__ import annotations
 import rospy
 from nav_msgs.msg import Odometry
 from nav_msgs.srv import GetPlan, GetMap
-from geometry_msgs.msg import PoseStamped 
-from nav_msgs.msg import GridCells, OccupancyGrid, Path, OccupancyGridUpdates
-from path_planner import P
+from geometry_msgs.msg import PoseStamped, Point
+from nav_msgs.msg import GridCells, OccupancyGrid, Path
+from map_msgs.msg import OccupancyGridUpdate
+from path_planner import PathPlanner
+import copy
 
-class FrontierNodeClient_:
+class FrontierNodeClient:
 
     def __init__(self):
         """
         Class constructor
         """
-        ### REQUIRED CREDIT
-        ## Initialize the node and call it "path_planner"
         rospy.init_node("frontier_node_client")
         # rospy.Subscriber('/map', OccupancyGrid, self.frontier)
 
         
         self.frontier_nav_service = rospy.Service('map', GetMap, self.frontier_path_handler)
 
+        self.cspace_pub = rospy.Publisher('/frontier_path/cspace', GridCells, queue_size=10)
+
         #gets map from gmapping node
-        rospy.Subscriber('/map', OccupancyGrid, self.update_map)
+        #rospy.Subscriber('/map', OccupancyGrid, self.update_map)
 
         #update map in rviz
-        self.update_rivz = rospy.Publisher('/map_updates', OccupancyGridUpdates, queue_size=10)
+        self.update_rivz = rospy.Publisher('/map_updates', OccupancyGridUpdate, queue_size=10)
 
 
     
@@ -95,6 +97,7 @@ class FrontierNodeClient_:
         return
     
 
+   
 
     def run(self):
         """
@@ -106,5 +109,5 @@ class FrontierNodeClient_:
 
         
 if __name__ == '__main__':
-    FrontierNodeClient_.run()
+    FrontierNodeClient().run()
     
