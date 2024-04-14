@@ -21,7 +21,7 @@ class FrontierNodeClient:
         
         self.frontier_nav_service = rospy.Service('map', GetMap, self.frontier_path_handler)
 
-        self.cspace_pub = rospy.Publisher('/frontier_path/cspace', GridCells, queue_size=10)
+    #    self.cspace_pub = rospy.Publisher('/frontier_path/cspace', GridCells, queue_size=10)
 
         #gets map from gmapping node
         #rospy.Subscriber('/map', OccupancyGrid, self.update_map)
@@ -63,14 +63,11 @@ class FrontierNodeClient:
             
             #     print("FINISHED GO_TO")
 
-            # return resp
+            return resp1
 
         except rospy.ServiceException as e:
             print("Service call failed: %s"%e)
 
-
-        
-        return
     
 
     #request map from gampping
@@ -97,7 +94,6 @@ class FrontierNodeClient:
         return
     
 
-   
 
     def run(self):
         """

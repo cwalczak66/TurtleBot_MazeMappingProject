@@ -369,6 +369,26 @@ class PathPlanner:
 
         except rospy.ServiceException as e:
          print("Service call failed: %s"%e)
+    
+    @staticmethod
+    def request_map2() -> OccupancyGrid:
+        """
+        Requests the map from the map server.
+        :return [OccupancyGrid] The grid if the service call was successful,
+                                None in case of error.
+        """
+        ### REQUIRED CREDIT
+        rospy.loginfo("Requesting the map")
+        rospy.wait_for_service('/map')
+
+        try:  
+            get_map = rospy.ServiceProxy('/map', GetMap)
+            
+            return get_map().map
+        
+
+        except rospy.ServiceException as e:
+         print("Service call failed: %s"%e)
 
     def calc_cspace(self, mapdata: OccupancyGrid, padding: int) -> OccupancyGrid:
         """
@@ -616,7 +636,7 @@ class PathPlanner:
         ## In case of error, return an empty path
         #rospy.wait_for_service('map_service')
         print("In Plan_path!")
-        mapdata = PathPlanner.request_map()
+        mapdata = PathPlanner.request_map2()
         if mapdata is None:
             return Path()
         ## Calculate the C-space and publish it
