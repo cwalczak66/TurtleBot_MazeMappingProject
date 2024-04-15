@@ -8,6 +8,7 @@ from nav_msgs.msg import GridCells, OccupancyGrid, Path
 from map_msgs.msg import OccupancyGridUpdate
 from path_planner import PathPlanner
 from lab4.srv import Cspace
+from path_planner import PathPlanner
 import copy
 
 class FrontierNodeClient:
@@ -98,9 +99,20 @@ class FrontierNodeClient:
         return
     
 
-    def edge_detection(self, msg: OccupancyGrid):
+    def edge_detection(self, mapdata: OccupancyGrid) -> tuple[int, int]:
         
-        pass
+        list_of_edge_cells = []
+        
+        for p in mapdata.data:
+            neighbors = PathPlanner.neighbors_of_8(mapdata, p)
+            for n_cell in neighbors:
+                index = PathPlanner.grid_to_index(mapdata, n_cell)
+                value = mapdata.data[index]
+                if value == -1:
+                    list_of_edge_cells.append(p)
+
+        return list_of_edge_cells
+
     
     
     @staticmethod
