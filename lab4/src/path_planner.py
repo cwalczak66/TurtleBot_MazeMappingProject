@@ -678,7 +678,7 @@ class PathPlanner:
         # self.neighbors_of_4()
         # self.neighbors_of_8()
         # self.a_star()
-        self.calc_cspace()
+        #self.calc_cspace()
 
         rospy.spin()
 

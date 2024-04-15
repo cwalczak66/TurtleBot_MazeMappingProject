@@ -6,7 +6,10 @@ project(lab4)
 
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS
+  roscpp
   rospy
+  std_msgs
+  message_generation
 )
 
 find_package(catkin REQUIRED
@@ -33,6 +36,11 @@ catkin_package(
 #  DEPENDS system_lib
 )
 
+add_service_files(
+  FILES
+  Cspace.srv
+)
+
 ###########
 ## Build ##
 ###########
@@ -41,3 +49,5 @@ include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
 )
+
+
