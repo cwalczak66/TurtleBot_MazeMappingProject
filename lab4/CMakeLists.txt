@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   message_generation
+  nav_msgs
 )
 
 find_package(catkin REQUIRED
@@ -29,6 +30,20 @@ find_package(catkin REQUIRED
 ## catkin specific configuration ##
 ###################################
 
+
+add_service_files(
+  FILES
+  Cspace.srv
+)
+
+generate_messages(
+   DEPENDENCIES
+   std_msgs
+   nav_msgs
+)
+
+
+
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES RBE3002_template
@@ -36,10 +51,11 @@ catkin_package(
 #  DEPENDS system_lib
 )
 
-add_service_files(
-  FILES
-  Cspace.srv
-)
+
+
+
+
+
 
 ###########
 ## Build ##

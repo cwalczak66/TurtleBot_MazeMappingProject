@@ -12,6 +12,7 @@ from math import sqrt
 from priority_queue import PriorityQueue
 from visualization_msgs.msg import Marker, MarkerArray
 import copy
+from lab4.srv import Cspace, CspaceResponse
 
 
 
@@ -30,7 +31,7 @@ class PathPlanner:
         ## Create a new service called "plan_path" that accepts messages of
         ## type GetPlan and calls self.plan_path() when a message is received
         self.path_plan_service = rospy.Service('plan_path', GetPlan, self.plan_path_handler)
-        self.c_space_service = rospy.Service('c_space', GetMap, self.calc_cspace)
+        
 
         ## Create a publisher for the C-space (the enlarged occupancy grid)
         ## The topic is "/path_planner/cspace", the message type is GridCells
@@ -105,7 +106,7 @@ class PathPlanner:
         """
         ### REQUIRED CREDIT
         map_resolution = mapdata.info.resolution
-        print(map_resolution)
+       
         world_coordinate_x = (p[0] + 0.5) * map_resolution + mapdata.info.origin.position.x
         world_coordinate_y = (p[1] + 0.5) * map_resolution + mapdata.info.origin.position.y
 
@@ -232,9 +233,7 @@ class PathPlanner:
         cell_walkable = True
         cell_free = True
 
-        print("origin x = %s",map_origin_x)
-        print("origin y = %s",map_origin_y)
-        print("boundary= %s", map_boundary_x)
+       
 
         if(p[0] < map_origin_x or p[0] >= map_origin_x + map_boundary_x or
            p[1] < map_origin_y or p[1] >= map_origin_y + map_boundary_y):
@@ -346,6 +345,43 @@ class PathPlanner:
         
 
         return cell_neighbours8
+    
+    @staticmethod
+    def neighbors(mapdata: OccupancyGrid, p: tuple[int, int]) -> list[tuple[int, int]]:
+        """
+        Returns the walkable 8-neighbors cells of (x,y) in the occupancy grid.
+        :param mapdata [OccupancyGrid] The map information.
+        :param p       [(int, int)]    The coordinate in the grid.
+        :return        [[(int,int)]]   A list of walkable 8-neighbors.
+        """
+        ### REQUIRED CREDIT
+        map_boundary_x = mapdata.info.width 
+        map_boundary_y = mapdata.info.height
+        map_origin_x = mapdata.info.origin.position.x
+        map_origin_y = mapdata.info.origin.position.y
+
+        cell_neighbours8 = []
+        
+
+        cell_neighbours8.append((p[0]+1, p[1]+1))
+
+        cell_neighbours8.append((p[0]-1, p[1]+1))
+
+        cell_neighbours8.append((p[0]+1, p[1]-1))
+
+        cell_neighbours8.append((p[0]-1, p[1]-1))
+       
+        cell_neighbours8.append((p[0], p[1]+1))
+
+        cell_neighbours8.append((p[0], p[1]-1))
+
+        cell_neighbours8.append((p[0]+1, p[1]))
+
+        cell_neighbours8.append((p[0]-1, p[1]))
+
+        
+
+        return cell_neighbours8
 
 
     
@@ -421,8 +457,7 @@ class PathPlanner:
                     cell_coordinate_y = int(cell_index / map_width)
                     cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
                     cell_coordinate = (cell_coordinate_x, cell_coordinate_y)
-                    print(cell_coordinate)
-                    print(value)
+                    
                     padded_map_list.append(cell_coordinate)
                 #    print(padded_map_list)
             #print(padded_map_list)
@@ -438,13 +473,71 @@ class PathPlanner:
         # cspace_mapData = copy.deepcopy(padded_map_list)                    
                 
         # mapdata = cspace_mapData
-        print(padded_map_list)
-        print(mapdata)
+        
         print("Printing cspace")
         self.cspace_pub.publish(self.makeDisplayMsg(curr_mapData,padded_map_list))
         
         ## Return the C-space
         return curr_mapData 
+    
+    def calc_cspace2(self, mapdata: OccupancyGrid, padding: int) -> list[tuple[int, int]]:
+        """
+        Calculates the C-Space, i.e., makes the obstacles in the map thicker.
+        Publishes the list of cells that were added to the original map.
+        :param mapdata [OccupancyGrid] The map data.
+        :param padding [int]           The number of cells around the obstacles.
+        :return        [OccupancyGrid] The C-Space.
+        """
+        ### REQUIRED CREDIT
+        rospy.loginfo("Calculating C-Space")
+        ## Go through each cell in the occupancy grid
+        ## Inflate the obstacles where necessary
+        ## Create a GridCells message and publish it
+        ## Return the C-space
+        
+        map_width = mapdata.info.width
+        curr_mapData = copy.deepcopy(mapdata)
+        curr_mapData.data = list(curr_mapData.data)
+        padded_map_list = []
+
+        new_mapData =  copy.deepcopy(curr_mapData)
+        new_mapData.data = list(new_mapData.data)
+
+        for amt_padded in range(0,padding):
+            #padded_map_list = []
+            for cell_index in range(len(curr_mapData.data)):
+                value = curr_mapData.data[cell_index]
+                if value > 50: # Identifying any value above 50 in the occupancy grid as obstacle
+                    cell_coordinate_y = int(cell_index / map_width)
+                    cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
+                    cell_coordinate = (cell_coordinate_x, cell_coordinate_y)
+                    
+                    padded_map_list.append(cell_coordinate)
+                #    print(padded_map_list)
+            #print(padded_map_list)
+
+                    for coordinate in PathPlanner.neighbors_of_8(curr_mapData, cell_coordinate):
+                        # new_mapData.data[PathPlanner.grid_to_index(new_mapData, thick)] = 100 # increasing the cell thickness by 100 (1 cell)
+                        coordinate_index = self.grid_to_index(curr_mapData, coordinate)
+                        if coordinate_index is not None:
+                            new_mapData.data[coordinate_index] = 100 
+                            padded_map_list.append(coordinate)
+            curr_mapData = copy.deepcopy(new_mapData)
+            curr_mapData.data = list(new_mapData.data)
+        # cspace_mapData = copy.deepcopy(padded_map_list)                    
+                
+        # mapdata = cspace_mapData
+       
+       
+        print("Printing cspace")
+        #self.cspace_pub.publish(self.makeDisplayMsg(curr_mapData,padded_map_list))
+        
+        ## Return the C-space
+        return padded_map_list
+    
+
+
+    
         
     
 

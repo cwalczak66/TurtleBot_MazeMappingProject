@@ -19,6 +19,8 @@ class FrontierNodeClient:
         """
         rospy.init_node("frontier_node_client")
         rospy.Subscriber('/map', OccupancyGrid, self.frontier_path_handler)
+        self.cspace_pub = rospy.Publisher('/plan_path/cspace', GridCells, queue_size=10)
+        self.edge_cells_pub = rospy.Publisher('edge_cells', GridCells, queue_size=10)
         #self.frontier_nav_service = rospy.Service('/map', GetMap, self.frontier_path_handler)
 
 
@@ -37,42 +39,24 @@ class FrontierNodeClient:
     #returns a poseStamped?(a place in the frontier to navigate to)
     def frontier_path_handler(self, map:OccupancyGrid):
         #requestion map from gmapping
-        print("in th hnadler")
-        #map = self.get_map()
-        #do something with map to find a place to go in frontier based on occupancy grid
-        
-        rospy.wait_for_service('c_space')
-        # start = self.start_pose
-        # rospy.loginfo(msg)
-        # goal = PoseStamped()
-        # goal.pose = msg.pose
-        # goal.header = msg.header
+        print("in the handler")
 
-        try:
-            c_space_call = rospy.ServiceProxy('c_space', Cspace)
-        #    path_planner_call = rospy.ServiceProxy('plan_path', GetPlan)
-            print("recievd cspace")
-            
-            resp1 = c_space_call()
-            # resp2 = path_planner_call(start, goal, 0)
-            # rospy.loginfo(resp.plan.poses)
-            # step = 1
-            # for waypoint in resp.plan.poses:
+        plan = PathPlanner
+        padding_cells = plan.calc_cspace2(plan, map, 1)
 
-                
-            #     print("STEP "+ str(step))
-            #     print("")
-            #     self.go_to(waypoint)
-            #     step = step + 1
-                
-            
-            #     print("FINISHED GO_TO")
+        self.cspace_pub.publish(plan.makeDisplayMsg(plan, map, padding_cells))
 
-            return resp1
+        edge_cell_list = self.edge_detection(map)
 
-        except rospy.ServiceException as e:
-            print("Service call failed: %s"%e)
+        print("Got the edge cells!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1111")
 
+        self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, map, edge_cell_list))
+
+
+       
+
+
+       
     
 
     #request map from gampping
@@ -99,19 +83,54 @@ class FrontierNodeClient:
         return
     
 
-    def edge_detection(self, mapdata: OccupancyGrid) -> tuple[int, int]:
+    def edge_detection(self, mapdata: OccupancyGrid) -> list[tuple[int, int]]:
+        cell_list = []
+        plan = PathPlanner
+        edge_cell_list = []
+        map_width = mapdata.info.width
         
-        list_of_edge_cells = []
-        
-        for p in mapdata.data:
-            neighbors = PathPlanner.neighbors_of_8(mapdata, p)
-            for n_cell in neighbors:
-                index = PathPlanner.grid_to_index(mapdata, n_cell)
-                value = mapdata.data[index]
-                if value == -1:
-                    list_of_edge_cells.append(p)
+        for cell_index in range(len(mapdata.data)):
+                
+                
+                cell_coordinate_y = int(cell_index / map_width)
+                cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
+                cell_coordinate = (cell_coordinate_x, cell_coordinate_y)
 
-        return list_of_edge_cells
+                if plan.is_cell_walkable(mapdata, cell_coordinate):
+
+                    cell_list.append(cell_coordinate)
+                
+
+            #     for coordinate in PathPlanner.neighbors_of_8(curr_mapData, cell_coordinate):
+            #         # new_mapData.data[PathPlanner.grid_to_index(new_mapData, thick)] = 100 # increasing the cell thickness by 100 (1 cell)
+            #         coordinate_index = self.grid_to_index(curr_mapData, coordinate)
+            #         if coordinate_index is not None:
+            #             new_mapData.data[coordinate_index] = 100 
+            #             padded_map_list.append(coordinate)
+            # curr_mapData = copy.deepcopy(new_mapData)
+            # curr_mapData.data = list(new_mapData.data)
+
+        # list_of_edge_cells = []
+        # map_width = mapdata.info.width
+
+        
+
+        
+        for cell in cell_list:
+      
+           
+            neighbor_cells = PathPlanner.neighbors(mapdata, cell)
+            
+            for n_cell in neighbor_cells:
+                index = PathPlanner.grid_to_index(mapdata, n_cell)
+                 
+                value = mapdata.data[index]
+                
+                if value == -1:
+                    edge_cell_list.append(cell)
+
+        print(edge_cell_list)
+        return edge_cell_list
 
     
     
