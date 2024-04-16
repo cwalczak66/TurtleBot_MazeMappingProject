@@ -7,7 +7,7 @@ from geometry_msgs.msg import PoseStamped, Point
 from nav_msgs.msg import GridCells, OccupancyGrid, Path
 from map_msgs.msg import OccupancyGridUpdate
 from path_planner import PathPlanner
-from lab4.srv import Cspace
+#from lab4.srv import Cspace
 from path_planner import PathPlanner
 import copy
 

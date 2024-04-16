@@ -12,7 +12,7 @@ from math import sqrt
 from priority_queue import PriorityQueue
 from visualization_msgs.msg import Marker, MarkerArray
 import copy
-from lab4.srv import Cspace, CspaceResponse
+#from lab4.srv import Cspace, CspaceResponse
 
 
 
