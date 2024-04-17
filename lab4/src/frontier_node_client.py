@@ -11,6 +11,7 @@ from path_planner import PathPlanner
 from path_planner import PathPlanner
 from path_planner_client import PathPlannerClient
 import copy
+from tf.transformations import euler_from_quaternion
 
 class FrontierNodeClient:
 
@@ -56,11 +57,22 @@ class FrontierNodeClient:
 
         self.cspace_pub.publish(plan.makeDisplayMsg(plan, map, padding_cells))
 
-        edge_cell_list = self.edge_detection(map)
+        shape_list = self.edge_detection2(map)
+        edges = []
+
+        for shape in shape_list:
+            for e_cell in shape:
+                edges.append(e_cell)
+
+        
+        self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, map, edges))
+            
+            
+
+        
 
         print("Got the edge cells!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1111")
 
-        self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, map, edge_cell_list))
 
 
        
@@ -92,55 +104,76 @@ class FrontierNodeClient:
     def update_rivz():
         return
     
-
-    def edge_detection(self, mapdata: OccupancyGrid) -> list[tuple[int, int]]:
-        cell_list = []
+    def find_shape(self, mapdata: OccupancyGrid, p: tuple[int, int]) -> list[tuple[int, int]]:
+        shape = []
+        shape.append(p)
+        notDone = True
         plan = PathPlanner
-        edge_cell_list = []
-        map_width = mapdata.info.width
+        queue = []     #Initialize a queue
+        visited = [] # List for visited nodes.
+        visited.append(p)
+        queue.append(p)
+        while queue:
+
+
+            m = queue.pop(0)
+            shape.append(m)
+            self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, shape))
+            rospy.sleep(0.07)
+            
+            
+            N_list = PathPlanner.neighbors(mapdata, m)
+            for e_cell in N_list:
+                index = PathPlanner.grid_to_index(mapdata, e_cell)
+                value = mapdata.data[index]
+                if (self.is_edge(mapdata, e_cell)) and PathPlanner.is_cell_walkable(mapdata, e_cell) and e_cell not in visited:
+                    visited.append(e_cell)
+                    queue.append(e_cell)
+
+        print("done, returning shape")
+        return shape
+                    
+
         
+    def is_edge(self, mapdata: OccupancyGrid, cell)-> bool:
+        isEdge = False
+        n_list = PathPlanner.neighbors(mapdata, cell)
+        for n_cell in n_list:
+            index = PathPlanner.grid_to_index(mapdata, n_cell) 
+            value = mapdata.data[index]
+            if value == -1 :
+                isEdge = True
+        return isEdge
+    
+
+    def edge_detection2(self, mapdata: OccupancyGrid)-> list[list[tuple[int, int]]]:
+        cell_list = []
+        shapes = []
+        
+        map_width = mapdata.info.width
         for cell_index in range(len(mapdata.data)):
                 
                 
-                cell_coordinate_y = int(cell_index / map_width)
-                cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
-                cell_coordinate = (cell_coordinate_x, cell_coordinate_y)
+            cell_coordinate_y = int(cell_index / map_width)
+            cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
+            cell_coordinate = (cell_coordinate_x, cell_coordinate_y)
+            if PathPlanner.is_cell_walkable(mapdata, cell_coordinate) and self.is_edge(mapdata, cell_coordinate):
+                cell_list.append(cell_coordinate)
 
-                if plan.is_cell_walkable(mapdata, cell_coordinate):
+        while cell_list:
+            shape = self.find_shape(mapdata, cell_list[0])
+            shapes.append(shape)
+            for c in shape:
+                if c in cell_list:
+                    cell_list.remove(c)
 
-                    cell_list.append(cell_coordinate)
-                
 
-            #     for coordinate in PathPlanner.neighbors_of_8(curr_mapData, cell_coordinate):
-            #         # new_mapData.data[PathPlanner.grid_to_index(new_mapData, thick)] = 100 # increasing the cell thickness by 100 (1 cell)
-            #         coordinate_index = self.grid_to_index(curr_mapData, coordinate)
-            #         if coordinate_index is not None:
-            #             new_mapData.data[coordinate_index] = 100 
-            #             padded_map_list.append(coordinate)
-            # curr_mapData = copy.deepcopy(new_mapData)
-            # curr_mapData.data = list(new_mapData.data)
-
-        # list_of_edge_cells = []
-        # map_width = mapdata.info.width
-
-        
-
-        
-        for cell in cell_list:
-      
-           
-            neighbor_cells = PathPlanner.neighbors(mapdata, cell)
             
-            for n_cell in neighbor_cells:
-                index = PathPlanner.grid_to_index(mapdata, n_cell)
-                 
-                value = mapdata.data[index]
-                
-                if value == -1:
-                    edge_cell_list.append(cell)
+            
+        return shapes
 
-        print(edge_cell_list)
-        return edge_cell_list
+        
+
 
     
 
