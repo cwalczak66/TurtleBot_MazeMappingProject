@@ -25,7 +25,7 @@ class FrontierNodeClient:
         self.edge_cells_pub = rospy.Publisher('edge_cells', GridCells, queue_size=10)
         #self.frontier_nav_service = rospy.Service('/map', GetMap, self.frontier_path_handler)
 
-
+        self.frontier_centroids_pub = rospy.Publisher('/frontier_centroids', GridCells, queue_size=10)
 
     #    self.cspace_pub = rospy.Publisher('/frontier_path/cspace', GridCells, queue_size=10)
 
@@ -73,6 +73,7 @@ class FrontierNodeClient:
 
         print("Got the edge cells!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1111")
 
+        self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, map, edge_cell_list))
 
 
        
@@ -177,20 +178,43 @@ class FrontierNodeClient:
 
     
 
-    def frontier_centroid(self, list_of_cells: list[tuple[int, int]]) -> tuple[int, int]:
+    def frontier_centroid(self, list_of_edge_cell_lists: list[list[tuple[int, int]]]) -> list[tuple[int, int]]:
 
         cell_coordinate_x = 0
         cell_coordinate_y = 0
+        # resolution = mapdata.info.resolution
+        frontier_centroid_list = []
 
-        num = len(list_of_cells)
-        for x, y in list_of_cells:
-            cell_coordinate_x += x
-            cell_coordinate_y += y
+        for edge_cell_list in list_of_edge_cell_lists:
+            num_items_in_sublist = len(edge_cell_list)
+            print("number of items: " + str(num_items_in_sublist))
+            print(type(edge_cell_list))
         
-        cell_coordinate_x = cell_coordinate_x / num
-        cell_coordinate_y = cell_coordinate_y / num
+            for x, y in edge_cell_list:
+                cell_coordinate_x += x
+                cell_coordinate_y += y
+                print("x coordinate: " + str(cell_coordinate_x))
+                print("y coordinate: " + str(cell_coordinate_y))  
 
-        return (cell_coordinate_x, cell_coordinate_y)
+            cell_coordinate_x /= num_items_in_sublist 
+            cell_coordinate_y /= num_items_in_sublist 
+        
+        frontier_centroid = (cell_coordinate_x, cell_coordinate_y)
+        frontier_centroid_list.append(frontier_centroid)
+        print(frontier_centroid_list)
+
+        # grid_cell_msg = GridCells()
+        # grid_cell_msg.header.stamp = rospy.Time.now()
+        # grid_cell_msg.header.frame_id = "map"
+        # grid_cell_msg.cell_height = resolution
+        # grid_cell_msg.cell_width = resolution
+        # grid_cell_msg.cells = frontier_centroid_list
+
+        #self.frontier_centroids_pub.publish(PathPlanner.makeDisplayMsg(mapdata, frontier_centroid_list))
+        
+        return frontier_centroid_list
+        
+
     
     #works by grapping odom data and then calculating the closest euclidean distance to a frontier and moving towards it
     def move_to_frontier(self, list_of_centroids: list[tuple[int,int]]) -> PoseStamped:
