@@ -9,6 +9,7 @@ from map_msgs.msg import OccupancyGridUpdate
 from path_planner import PathPlanner
 #from lab4.srv import Cspace
 from path_planner import PathPlanner
+from path_planner_client import PathPlannerClient
 import copy
 
 class FrontierNodeClient:
@@ -32,6 +33,15 @@ class FrontierNodeClient:
 
         #update map in rviz
         self.update_rivz = rospy.Publisher('/map_updates', OccupancyGridUpdate, queue_size=10)
+        #update odom
+        rospy.Subscriber('/odom', Odometry, self.update_odometry)
+        self.px = 0
+        self.py = 0
+        self.kp = 0.1
+        
+        # yaw angle
+        self.pth = 0  
+
 
 
     
@@ -149,6 +159,39 @@ class FrontierNodeClient:
 
         return (cell_coordinate_x, cell_coordinate_y)
     
+    #works by grapping odom data and then calculating the closest euclidean distance to a frontier and moving towards it
+    def move_to_frontier(self, grid_cell:GridCells) -> PoseStamped:
+
+
+        list_of_centroids =  grid_cell.cells
+        rx = self.px
+        ry = self.py
+    
+        
+        shortest_distance = 100000
+        current_tuple = (0,0)
+        
+        #loop to find closest
+        for x,y in list_of_centroids:
+            current_dist = PathPlanner.euclidean_distance((rx, ry),(x,y))
+            if current_dist < shortest_distance:
+                current_tuple = (x,y)
+                shortest_distance = current_dist
+        
+        #not going full way
+        going_partway = (current_tuple[0]/2, current_tuple[1]/2)
+        #creating pose_stamped
+        go_to_pose = PoseStamped()
+        go_to_pose.pose.position.x = going_partway[0]
+        go_to_pose.pose.position.y = going_partway[1]
+        #go_to_pose.pose.orientation
+        #moving to point with astar
+        PathPlannerClient.path_planner_client(self, go_to_pose)
+        
+        #return what point robot is going
+        return go_to_pose  
+
+    
     
     @staticmethod
     def world_to_grid(mapdata: OccupancyGrid, wp: Point) -> tuple[int, int]:
@@ -172,7 +215,15 @@ class FrontierNodeClient:
 
         return cell_position
         
+    def update_odometry(self, odom_msg: Odometry):
     
+    
+        self.px = odom_msg.pose.pose.position.x + 4.8
+        self.py = odom_msg.pose.pose.position.y + 4.8
+        quat_orig = odom_msg.pose.pose.orientation
+        quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
+        (roll, pitch, yaw) = euler_from_quaternion(quat_list)
+        self.pth = yaw
 
 
     def run(self):
