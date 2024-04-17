@@ -133,6 +133,22 @@ class FrontierNodeClient:
         return edge_cell_list
 
     
+
+    def frontier_centroid(self, list_of_cells: list[tuple[int, int]]) -> tuple[int, int]:
+
+        cell_coordinate_x = 0
+        cell_coordinate_y = 0
+
+        num = len(list_of_cells)
+        for x, y in list_of_cells:
+            cell_coordinate_x += x
+            cell_coordinate_y += y
+        
+        cell_coordinate_x = cell_coordinate_x / num
+        cell_coordinate_y = cell_coordinate_y / num
+
+        return (cell_coordinate_x, cell_coordinate_y)
+    
     
     @staticmethod
     def world_to_grid(mapdata: OccupancyGrid, wp: Point) -> tuple[int, int]:
