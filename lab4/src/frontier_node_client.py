@@ -73,7 +73,6 @@ class FrontierNodeClient:
 
         print("Got the edge cells!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1111")
 
-        self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, map, edge_cell_list))
 
 
        
