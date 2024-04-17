@@ -160,14 +160,11 @@ class FrontierNodeClient:
         return (cell_coordinate_x, cell_coordinate_y)
     
     #works by grapping odom data and then calculating the closest euclidean distance to a frontier and moving towards it
-    def move_to_frontier(self, grid_cell:GridCells) -> PoseStamped:
-
-
-        list_of_centroids =  grid_cell.cells
+    def move_to_frontier(self, list_of_centroids: list[tuple[int,int]]) -> PoseStamped:
+        
+        
         rx = self.px
         ry = self.py
-    
-        
         shortest_distance = 100000
         current_tuple = (0,0)
         
@@ -189,7 +186,7 @@ class FrontierNodeClient:
         PathPlannerClient.path_planner_client(self, go_to_pose)
         
         #return what point robot is going
-        return go_to_pose  
+        return go_to_pose
 
     
     
