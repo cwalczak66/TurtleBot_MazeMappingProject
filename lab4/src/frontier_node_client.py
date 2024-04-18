@@ -21,6 +21,9 @@ class FrontierNodeClient:
         """
         rospy.init_node("frontier_node_client")
         rospy.Subscriber('/map', OccupancyGrid, self.frontier_path_handler)
+        self.go_to_pub = rospy.Publisher('move_base_simple/goal' , PoseStamped, queue_size=10)
+
+
         self.cspace_pub = rospy.Publisher('/plan_path/cspace', GridCells, queue_size=10)
         self.edge_cells_pub = rospy.Publisher('edge_cells', GridCells, queue_size=10)
         #self.frontier_nav_service = rospy.Service('/map', GetMap, self.frontier_path_handler)
@@ -39,7 +42,8 @@ class FrontierNodeClient:
         self.px = 0
         self.py = 0
         self.kp = 0.1
-        
+
+        self.start_pose = PoseStamped()
         # yaw angle
         self.pth = 0  
 
@@ -78,7 +82,7 @@ class FrontierNodeClient:
         self.move_to_frontier(centroids)
         #LETS HOME THIS WORK
         print("FINISHED MOVE")
-        rospy.sleep(10)
+        # rospy.sleep(10)
 
 
 
@@ -229,7 +233,7 @@ class FrontierNodeClient:
     #works by grapping odom data and then calculating the closest euclidean distance to a frontier and moving towards it
     def move_to_frontier(self, list_of_centroids: list[tuple[int,int]]) -> PoseStamped:
         
-        
+        print(list_of_centroids)
         rx = self.px
         ry = self.py
         shortest_distance = 100000
@@ -249,11 +253,17 @@ class FrontierNodeClient:
         go_to_pose = PoseStamped()
         go_to_pose.pose.position.x = going_partway[0]
         go_to_pose.pose.position.y = going_partway[1]
+        go_to_pose.header.frame_id = "map"
+        go_to_pose.header.stamp = rospy.Time.now()
+
         #go_to_pose.pose.orientation
         #moving to point with astar
         print("FOUND POINT TIME TO ASTAR")
-        PathPlannerClient.path_planner_client(self, go_to_pose)
-
+        print(current_tuple[0], current_tuple[1])
+        print(going_partway[0], going_partway[1])
+        #suppose to move but doesnt :()
+        #PathPlannerClient.path_planner_client(self, go_to_pose)
+        self.go_to_pub.publish(go_to_pose)
         
         #return what point robot is going
         return go_to_pose
@@ -291,6 +301,7 @@ class FrontierNodeClient:
         quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
         (roll, pitch, yaw) = euler_from_quaternion(quat_list)
         self.pth = yaw
+        #NEED TO UPDATE THE START
 
 
     def run(self):
