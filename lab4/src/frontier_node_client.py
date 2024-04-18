@@ -47,7 +47,7 @@ class FrontierNodeClient:
 
     
     #commulative service that takes in a  map(Occumpancy Grid)
-    #returns a poseStamped?(a place in the frontier to navigate to)
+    #returns a poseStamped(a place in the frontier to navigate to)
     def frontier_path_handler(self, mapdata:OccupancyGrid):
         #requestion map from gmapping
         print("in the handler")
@@ -57,8 +57,6 @@ class FrontierNodeClient:
         plan = PathPlanner
         padding_cells = plan.calc_cspace2(plan, mapdata, 1)
 
-        self.cspace_pub.publish(plan.makeDisplayMsg(plan, mapdata, padding_cells))
-
         shape_list = self.edge_detection2(mapdata)
         edges = []
         centroids = []
@@ -67,26 +65,23 @@ class FrontierNodeClient:
             for e_cell in shape:
                 edges.append(e_cell)
 
-        
-        #self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, edges))
-
+        cspace_without_frontier  = []
         centroids = self.frontier_centroid(shape_list)
-        
+        new_centroids = []
+
+        for padded_cell in padding_cells:
+            for c in centroids:
+                if c == padded_cell:
+                    centroids.remove(c)
+                
+
+        self.cspace_pub.publish(plan.makeDisplayMsg(plan, mapdata, padding_cells))
+
+        #self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, edges))
         self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, centroids))
             
-        
-
-        
-
         print("Got the edge cells!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1111")
 
-
-
-       
-
-
-       
-    
 
     #request map from gampping
     def get_map(self):
