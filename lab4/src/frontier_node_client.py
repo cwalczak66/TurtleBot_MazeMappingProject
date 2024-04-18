@@ -65,15 +65,22 @@ class FrontierNodeClient:
             for e_cell in shape:
                 edges.append(e_cell)
 
-        cspace_without_frontier  = []
         centroids = self.frontier_centroid(shape_list)
-        new_centroids = []
 
         for padded_cell in padding_cells:
             for c in centroids:
                 if c == padded_cell:
                     centroids.remove(c)
                 
+
+
+        print("LIST SORTED ITS TIME TO MOVE!")
+        self.move_to_frontier(centroids)
+        #LETS HOME THIS WORK
+        print("FINISHED MOVE")
+        rospy.sleep(10)
+
+
 
         self.cspace_pub.publish(plan.makeDisplayMsg(plan, mapdata, padding_cells))
 
@@ -229,6 +236,7 @@ class FrontierNodeClient:
         current_tuple = (0,0)
         
         #loop to find closest
+        print("finding closest")
         for x,y in list_of_centroids:
             current_dist = PathPlanner.euclidean_distance((rx, ry),(x,y))
             if current_dist < shortest_distance:
@@ -243,7 +251,9 @@ class FrontierNodeClient:
         go_to_pose.pose.position.y = going_partway[1]
         #go_to_pose.pose.orientation
         #moving to point with astar
+        print("FOUND POINT TIME TO ASTAR")
         PathPlannerClient.path_planner_client(self, go_to_pose)
+
         
         #return what point robot is going
         return go_to_pose
