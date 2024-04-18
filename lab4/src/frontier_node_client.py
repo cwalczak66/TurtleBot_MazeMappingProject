@@ -48,26 +48,33 @@ class FrontierNodeClient:
     
     #commulative service that takes in a  map(Occumpancy Grid)
     #returns a poseStamped?(a place in the frontier to navigate to)
-    def frontier_path_handler(self, map:OccupancyGrid):
+    def frontier_path_handler(self, mapdata:OccupancyGrid):
         #requestion map from gmapping
         print("in the handler")
 
+      
+
         plan = PathPlanner
-        padding_cells = plan.calc_cspace2(plan, map, 1)
+        padding_cells = plan.calc_cspace2(plan, mapdata, 1)
 
-        self.cspace_pub.publish(plan.makeDisplayMsg(plan, map, padding_cells))
+        self.cspace_pub.publish(plan.makeDisplayMsg(plan, mapdata, padding_cells))
 
-        shape_list = self.edge_detection2(map)
+        shape_list = self.edge_detection2(mapdata)
         edges = []
+        centroids = []
 
         for shape in shape_list:
             for e_cell in shape:
                 edges.append(e_cell)
 
         
-        self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, map, edges))
+        #self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, edges))
+
+        centroids = self.frontier_centroid(shape_list)
+        
+        self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, centroids))
             
-            
+        
 
         
 
@@ -118,8 +125,8 @@ class FrontierNodeClient:
 
             m = queue.pop(0)
             shape.append(m)
-            self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, shape))
-            rospy.sleep(0.07)
+            # self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, shape))
+            # rospy.sleep(0.07)
             
             
             N_list = PathPlanner.neighbors(mapdata, m)
@@ -179,8 +186,7 @@ class FrontierNodeClient:
 
     def frontier_centroid(self, list_of_edge_cell_lists: list[list[tuple[int, int]]]) -> list[tuple[int, int]]:
 
-        cell_coordinate_x = 0
-        cell_coordinate_y = 0
+        
         # resolution = mapdata.info.resolution
         frontier_centroid_list = []
 
@@ -188,6 +194,9 @@ class FrontierNodeClient:
             num_items_in_sublist = len(edge_cell_list)
             print("number of items: " + str(num_items_in_sublist))
             print(type(edge_cell_list))
+
+            cell_coordinate_x = 0
+            cell_coordinate_y = 0
         
             for x, y in edge_cell_list:
                 cell_coordinate_x += x
@@ -198,9 +207,9 @@ class FrontierNodeClient:
             cell_coordinate_x /= num_items_in_sublist 
             cell_coordinate_y /= num_items_in_sublist 
         
-        frontier_centroid = (cell_coordinate_x, cell_coordinate_y)
-        frontier_centroid_list.append(frontier_centroid)
-        print(frontier_centroid_list)
+            frontier_centroid = (int(cell_coordinate_x), int(cell_coordinate_y))
+            frontier_centroid_list.append(frontier_centroid)
+            print(frontier_centroid_list)
 
         # grid_cell_msg = GridCells()
         # grid_cell_msg.header.stamp = rospy.Time.now()
