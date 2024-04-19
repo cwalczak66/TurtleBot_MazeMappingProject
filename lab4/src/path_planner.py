@@ -423,6 +423,7 @@ class PathPlanner:
         try:  
             get_map = rospy.ServiceProxy('/map', GetMap)
             
+            print(get_map().map)
             return get_map().map
         
 
@@ -435,6 +436,7 @@ class PathPlanner:
         
         """
         self.current_map = map_msg
+        #print(map_msg)
         return self.current_map
 
 
@@ -744,8 +746,8 @@ class PathPlanner:
         print("In Plan_path!")
         #mapdata = PathPlanner.request_map2()
         mapdata = self.current_map
-        #PathPlanner.request_custom()
-
+        PathPlanner.request_custom(self, mapdata)
+        #print(mapdata)
         if mapdata is None:
             return Path()
         ## Calculate the C-space and publish it
@@ -770,7 +772,7 @@ class PathPlanner:
         waypoints = PathPlanner.optimize_path(path)
         ## Return a Path message
         self.path_solution.publish(self.path_to_message(cspacedata, waypoints)) 
-        print("waypoints:" + waypoints)
+        #print("waypoints:" + waypoints)
         
         return self.path_to_message(cspacedata, waypoints)
 

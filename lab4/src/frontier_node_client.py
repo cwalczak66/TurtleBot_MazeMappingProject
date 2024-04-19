@@ -25,7 +25,8 @@ class FrontierNodeClient:
 
 
         self.cspace_pub = rospy.Publisher('/plan_path/cspace', GridCells, queue_size=10)
-        self.edge_cells_pub = rospy.Publisher('edge_cells', GridCells, queue_size=10)
+        self.edge_cells_pub = rospy.Publisher('/edge_cells', GridCells, queue_size=10)
+        self.gotroid_pub = rospy.Publisher('/gotroid', GridCells , queue_size=10 )
         #self.frontier_nav_service = rospy.Service('/map', GetMap, self.frontier_path_handler)
 
         self.frontier_centroids_pub = rospy.Publisher('/frontier_centroids', GridCells, queue_size=10)
@@ -40,12 +41,14 @@ class FrontierNodeClient:
         #update odom
         rospy.Subscriber('/odom', Odometry, self.update_odometry)
         self.px = 0
-        self.py = 0
+        self.py = 0 
         self.kp = 0.1
 
         self.start_pose = PoseStamped()
         # yaw angle
         self.pth = 0  
+        #self.going_partway = 0
+        self.going_centroid = []
 
 
 
@@ -90,6 +93,9 @@ class FrontierNodeClient:
 
         #self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, edges))
         self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, centroids))
+
+        self.gotroid_pub.publish(plan.makeDisplayMsg(plan, mapdata, self.going_centroid))
+        
             
         print("Got the edge cells!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1111")
 
@@ -263,6 +269,10 @@ class FrontierNodeClient:
         print(going_partway[0], going_partway[1])
         #suppose to move but doesnt :()
         #PathPlannerClient.path_planner_client(self, go_to_pose)
+
+        #global value just for rviz and testing
+        self.going_centroid.append(going_partway)
+
         self.go_to_pub.publish(go_to_pose)
         
         #return what point robot is going
