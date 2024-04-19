@@ -48,6 +48,7 @@ class PathPlanner:
 
         #publisher for the path message
         self.path_solution = rospy.Publisher('/plan_path/solution_path', Path, queue_size=10)
+        rospy.Subscriber('/map', OccupancyGrid, self.request_custom)
 
         #Subscribing to cmd_vel topic to recieve messages about the goal 
     #    self.goal_sub = rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.plan_path_handler)
@@ -416,6 +417,7 @@ class PathPlanner:
         ### REQUIRED CREDIT
         rospy.loginfo("Requesting the map")
         rospy.wait_for_service('/map')
+        print("got map!!!!")
 
         try:  
             get_map = rospy.ServiceProxy('/map', GetMap)
@@ -425,6 +427,15 @@ class PathPlanner:
 
         except rospy.ServiceException as e:
          print("Service call failed: %s"%e)
+    def request_custom(self, map_msg:OccupancyGrid) -> OccupancyGrid:
+        """
+        requests a map from the topic /map
+        
+        """
+        return map_msg
+
+
+
 
     def calc_cspace(self, mapdata: OccupancyGrid, padding: int) -> OccupancyGrid:
         """
@@ -729,7 +740,9 @@ class PathPlanner:
         ## In case of error, return an empty path
         #rospy.wait_for_service('map_service')
         print("In Plan_path!")
-        mapdata = PathPlanner.request_map2()
+        #mapdata = PathPlanner.request_map2()
+        mapdata = PathPlanner.request_custom()
+
         if mapdata is None:
             return Path()
         ## Calculate the C-space and publish it
@@ -742,7 +755,7 @@ class PathPlanner:
     #    start = PathPlanner.world_to_grid(mapdata, msg.start.pose.position)
     #    goal  = PathPlanner.world_to_grid(mapdata, msg.goal.pose.position)
     #    path  = self.a_star(mapdata, start, goal)
-
+        print("plan path handler a*")
         start = PathPlanner.world_to_grid(cspacedata, msg.start.pose.position)
         goal  = PathPlanner.world_to_grid(cspacedata, msg.goal.pose.position)
         path  = self.a_star(cspacedata, start, goal)

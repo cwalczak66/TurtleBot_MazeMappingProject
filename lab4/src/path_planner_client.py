@@ -37,13 +37,13 @@ class PathPlannerClient:
         
         # yaw angle
         self.pth = 0  
-
+        rospy.wait_for_service('plan_path')
 
 
 
     def path_planner_client(self, msg: PoseStamped): 
     
-        rospy.wait_for_service('plan_path')
+        print("in path planner client")
         start = self.start_pose
         rospy.loginfo(msg)
         goal = PoseStamped()
