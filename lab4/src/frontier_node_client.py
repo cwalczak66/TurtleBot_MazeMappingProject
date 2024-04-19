@@ -46,7 +46,9 @@ class FrontierNodeClient:
         self.start_pose = PoseStamped()
         # yaw angle
         self.pth = 0  
-
+        self.first_bool = True
+        self.starting_position = ()
+ 
 
 
     
@@ -55,6 +57,9 @@ class FrontierNodeClient:
     def frontier_path_handler(self, mapdata:OccupancyGrid):
         #requestion map from gmapping
         print("in the handler")
+        if self.first_bool == True:
+            self.starting_position = (self.px, self.py)
+            self.first_bool = False
 
       
 
@@ -92,6 +97,14 @@ class FrontierNodeClient:
         self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, centroids))
             
         print("Got the edge cells!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1111")
+    
+    def return_to_start(self):
+        starting_pose = PoseStamped()
+        starting_pose.pose.position.x = self.starting_position[0]
+        starting_pose.pose.position.y = self.starting_position[1]
+        starting_pose.header.frame_id = "map"
+        starting_pose.header.stamp = rospy.Time.now()
+        PathPlannerClient.path_planner_client(self, starting_pose)
 
 
     #request map from gampping
@@ -233,16 +246,15 @@ class FrontierNodeClient:
     #works by grapping odom data and then calculating the closest euclidean distance to a frontier and moving towards it
     def move_to_frontier(self, list_of_centroids: list[tuple[int,int]]) -> PoseStamped:
         
-        print(list_of_centroids)
-        rx = self.px
-        ry = self.py
+        
+
         shortest_distance = 100000
         current_tuple = (0,0)
         
         #loop to find closest
         print("finding closest")
         for x,y in list_of_centroids:
-            current_dist = PathPlanner.euclidean_distance((rx, ry),(x,y))
+            current_dist = PathPlanner.euclidean_distance((self.px, self.py),(x,y))
             if current_dist < shortest_distance:
                 current_tuple = (x,y)
                 shortest_distance = current_dist
@@ -255,7 +267,7 @@ class FrontierNodeClient:
         go_to_pose.pose.position.y = going_partway[1]
         go_to_pose.header.frame_id = "map"
         go_to_pose.header.stamp = rospy.Time.now()
-
+        
         #go_to_pose.pose.orientation
         #moving to point with astar
         print("FOUND POINT TIME TO ASTAR")
