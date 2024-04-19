@@ -53,13 +53,14 @@ class PathPlanner:
         #Subscribing to cmd_vel topic to recieve messages about the goal 
     #    self.goal_sub = rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.plan_path_handler)
 
+
+        self.current_map = OccupancyGrid()
+        
         ## Initialize the request counter
         self.request_counter = 0
         ## Sleep to allow roscore to do some housekeeping
         rospy.sleep(1.0)
-        rospy.loginfo("Path planner node ready")
-
-        
+        rospy.loginfo("Path planner node ready")        
 
     @staticmethod
     def grid_to_index(mapdata: OccupancyGrid, p: tuple[int, int]) -> int:
@@ -432,7 +433,8 @@ class PathPlanner:
         requests a map from the topic /map
         
         """
-        return map_msg
+        self.current_map = map_msg
+        return self.current_map
 
 
 
@@ -721,7 +723,6 @@ class PathPlanner:
         path_msg.header.stamp = rospy.Time.now()
         path_msg.poses = poses_list
             
-        
         rospy.loginfo("Returning a Path message")
         return(path_msg)
 
@@ -741,7 +742,8 @@ class PathPlanner:
         #rospy.wait_for_service('map_service')
         print("In Plan_path!")
         #mapdata = PathPlanner.request_map2()
-        mapdata = PathPlanner.request_custom()
+        mapdata = self.current_map
+        #PathPlanner.request_custom()
 
         if mapdata is None:
             return Path()
@@ -767,7 +769,7 @@ class PathPlanner:
         waypoints = PathPlanner.optimize_path(path)
         ## Return a Path message
         self.path_solution.publish(self.path_to_message(cspacedata, waypoints)) 
-
+        print("waypoints:" + waypoints)
         
         return self.path_to_message(cspacedata, waypoints)
 

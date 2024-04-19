@@ -53,10 +53,10 @@ class PathPlannerClient:
         try:
             path_planner_call = rospy.ServiceProxy('plan_path', GetPlan)
             resp = path_planner_call(start, goal, 0)
-            #rospy.loginfo(resp.plan.poses)
+            rospy.loginfo(resp.plan.poses)
             step = 1
             for waypoint in resp.plan.poses:
-
+                #print(resp.plan.poses)
                 
                 print("STEP "+ str(step))
                 print("")
