@@ -428,6 +428,7 @@ class PathPlanner:
 
         except rospy.ServiceException as e:
          print("Service call failed: %s"%e)
+
     def request_custom(self, map_msg:OccupancyGrid) -> OccupancyGrid:
         """
         requests a map from the topic /map
