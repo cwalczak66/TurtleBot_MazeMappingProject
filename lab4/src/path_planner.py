@@ -417,11 +417,11 @@ class PathPlanner:
         """
         ### REQUIRED CREDIT
         rospy.loginfo("Requesting the map")
-        rospy.wait_for_service('/map')
+        rospy.wait_for_service('/dynamic_map')
         print("got map!!!!")
 
         try:  
-            get_map = rospy.ServiceProxy('/map', GetMap)
+            get_map = rospy.ServiceProxy('/dynamic_map', GetMap)
             
             print(get_map().map)
             return get_map().map
@@ -744,9 +744,9 @@ class PathPlanner:
         ## In case of error, return an empty path
         #rospy.wait_for_service('map_service')
         print("In Plan_path!")
-        #mapdata = PathPlanner.request_map2()
-        mapdata = self.current_map
-        PathPlanner.request_custom(self, mapdata)
+        mapdata = PathPlanner.request_map2()
+        #mapdata = self.current_map
+        #PathPlanner.request_custom(self, mapdata)
         #print(mapdata)
         if mapdata is None:
             return Path()

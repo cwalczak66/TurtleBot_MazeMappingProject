@@ -115,18 +115,18 @@ class FrontierNodeClient:
 
 
     #request map from gampping
-    def get_map(self):
-        rospy.loginfo("Requesting the map")
-        rospy.wait_for_service('/map')
+    # def get_map(self):
+    #     rospy.loginfo("Requesting the map")
+    #     rospy.wait_for_service('/map')
 
-        try:  
-            get_map = rospy.ServiceProxy('/map', GetMap)
+    #     try:  
+    #         get_map = rospy.ServiceProxy('/map', GetMap)
             
-            return get_map().map
+    #         return get_map().map
         
 
-        except rospy.ServiceException as e:
-         print("Service call failed: %s"%e)
+    #     except rospy.ServiceException as e:
+    #      print("Service call failed: %s"%e)
     
     #gets the map from gmapping(topic is /map)
     def update_map():
