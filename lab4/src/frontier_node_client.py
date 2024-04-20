@@ -3,7 +3,7 @@ from __future__ import annotations
 import rospy
 from nav_msgs.msg import Odometry
 from nav_msgs.srv import GetPlan, GetMap
-from geometry_msgs.msg import PoseStamped, Point
+from geometry_msgs.msg import PoseStamped, Point, PoseWithCovarianceStamped
 from nav_msgs.msg import GridCells, OccupancyGrid, Path
 from map_msgs.msg import OccupancyGridUpdate
 from path_planner import PathPlanner
@@ -36,6 +36,16 @@ class FrontierNodeClient:
         #gets map from gmapping node
         #rospy.Subscriber('/map', OccupancyGrid, self.update_map)
 
+        #subscriber for amcl
+        rospy.Subscriber('amcl_pose', PoseWithCovarianceStamped , self.amcl_callback)
+        
+        #WHEN THE AMCL WORKS WE GIVE IT ANOTHER NAV GOAL AFTER LOCALIZATION
+        rospy.Subscriber('move_base_simple/goal', PoseStamped, self.amcl_move)
+
+
+
+
+
         #update map in rviz
         self.update_rivz = rospy.Publisher('/map_updates', OccupancyGridUpdate, queue_size=10)
         #update odom
@@ -52,10 +62,32 @@ class FrontierNodeClient:
  
         #self.going_partway = 0
         self.going_centroid = []
+        self.amclx = 0
+        self.amcly = 0
+        self.amclcovariance = 0
+        self.amclox = 0
+        self.amcloy = 0
+        self.amcloz = 0
+        self.amclow = 0 
+
+
+    #get positions from amcl(estimated position)
+    def amcl_callback(self, msg:PoseWithCovarianceStamped):
+        self.amclx = msg.pose.pose.position.x
+        self.amcly = msg.pose.pose.position.y
+        self.amclcovariance = msg.pose.covariance
+        self.amclox = msg.pose.pose.orientation.x
+        self.amcloy = msg.pose.pose.orientation.y
+        self.amcloz = msg.pose.pose.orientation.z
+        self.amclow = msg.pose.pose.orientation.w
+
+    def amcl_move(self, msg:PoseStamped):
+        #need to localize with the amcl
+        PathPlannerClient.path_planner_client(self, msg)
 
 
 
-    
+
     #commulative service that takes in a  map(Occumpancy Grid)
     #returns a poseStamped(a place in the frontier to navigate to)
     def frontier_path_handler(self, mapdata:OccupancyGrid):
