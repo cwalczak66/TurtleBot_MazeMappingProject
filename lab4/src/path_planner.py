@@ -131,16 +131,24 @@ class PathPlanner:
         """
         ### REQUIRED CREDIT
         map_resolution = mapdata.info.resolution
+        print("resolution = " + str(map_resolution))
         world_origin_x = mapdata.info.origin.position.x
+        print("origin_x = " + str(world_origin_x))
         world_origin_y = mapdata.info.origin.position.y
+        print("origin_y = " + str(world_origin_y))
+        print(wp.x)
+        print(wp.y)
 
         cell_coordinate_x = int((wp.x - world_origin_x) / map_resolution)
         cell_coordinate_y = int((wp.y - world_origin_y) / map_resolution)
 
+        print("cellx: " + str(cell_coordinate_x))
+        print("celly: " + str(cell_coordinate_y))
+
+        # cell_position = (cell_coordinate_x, cell_coordinate_y)
         
-
-        cell_position = (cell_coordinate_x, cell_coordinate_y)
-
+        cell_position = (int(wp.x), int(wp.y))
+        print(cell_position)
         return cell_position
         
 
@@ -230,8 +238,8 @@ class PathPlanner:
         ### REQUIRED CREDIT
         map_boundary_x = mapdata.info.width # no.of cells
         map_boundary_y = mapdata.info.height # no.of cells
-        map_origin_x = int(mapdata.info.origin.position.x) + 5
-        map_origin_y = int(mapdata.info.origin.position.y) + 5
+        map_origin_x = int(mapdata.info.origin.position.x) + 10
+        map_origin_y = int(mapdata.info.origin.position.y) + 10
         cell_walkable = True
         cell_free = True
 
@@ -423,7 +431,7 @@ class PathPlanner:
         try:  
             get_map = rospy.ServiceProxy('/dynamic_map', GetMap)
             
-            print(get_map().map)
+            # print(get_map().map)
             return get_map().map
         
 
@@ -757,12 +765,17 @@ class PathPlanner:
         cspacedata = self.calc_cspace(mapdata, 1)
         ## Execute A*
 
+        
+
     #    start = PathPlanner.world_to_grid(mapdata, msg.start.pose.position)
     #    goal  = PathPlanner.world_to_grid(mapdata, msg.goal.pose.position)
     #    path  = self.a_star(mapdata, start, goal)
         print("plan path handler a*")
         start = PathPlanner.world_to_grid(cspacedata, msg.start.pose.position)
         goal  = PathPlanner.world_to_grid(cspacedata, msg.goal.pose.position)
+        
+        print(start)
+        print(goal)
         path  = self.a_star(cspacedata, start, goal)
         ## Return a Path message
         

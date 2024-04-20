@@ -86,7 +86,7 @@ class PathPlannerClient:
 
         #print("x: " + str(self.px) + "y: " + str(self.py) + "yaw: " + str(self.pth))
 
-
+        
 
 
         # pose_stamped_msg = PoseStamped()

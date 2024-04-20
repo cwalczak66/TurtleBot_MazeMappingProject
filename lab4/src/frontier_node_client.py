@@ -21,9 +21,9 @@ class FrontierNodeClient:
         """
         rospy.init_node("frontier_node_client")
         rospy.Subscriber('/map', OccupancyGrid, self.frontier_path_handler)
-        self.go_to_pub = rospy.Publisher('move_base_simple/goal' , PoseStamped, queue_size=10)
+        self.go_to_pub = rospy.Publisher('move_base_simple/goal', PoseStamped, queue_size=10)
 
-
+        self.orig_pub = rospy.Publisher('/origin', GridCells, queue_size=10)
         self.cspace_pub = rospy.Publisher('/plan_path/cspace', GridCells, queue_size=10)
         self.edge_cells_pub = rospy.Publisher('/edge_cells', GridCells, queue_size=10)
         self.gotroid_pub = rospy.Publisher('/gotroid', GridCells , queue_size=10 )
@@ -40,6 +40,7 @@ class FrontierNodeClient:
         self.update_rivz = rospy.Publisher('/map_updates', OccupancyGridUpdate, queue_size=10)
         #update odom
         rospy.Subscriber('/odom', Odometry, self.update_odometry)
+
         self.px = 0
         self.py = 0 
         self.kp = 0.1
@@ -48,7 +49,7 @@ class FrontierNodeClient:
         # yaw angle
         self.pth = 0  
         self.first_bool = True
-        self.starting_position = ()
+        self.starting_position = (0, 0)
  
         #self.going_partway = 0
         self.going_centroid = []
@@ -61,14 +62,17 @@ class FrontierNodeClient:
     def frontier_path_handler(self, mapdata:OccupancyGrid):
         #requestion map from gmapping
         print("in the handler")
-        if self.first_bool == True:
-            self.starting_position = (self.px, self.py)
-            self.first_bool = False
+        
+        
+        # if self.first_bool == True:
+        #     self.starting_position = (self.world_to_grid(self.px), self.world_to_grid(self.py))
+        #     self.first_bool = False
 
-      
+        
 
         plan = PathPlanner
         padding_cells = plan.calc_cspace2(plan, mapdata, 1)
+        
 
         shape_list = self.edge_detection2(mapdata)
         edges = []
@@ -88,7 +92,7 @@ class FrontierNodeClient:
 
 
         print("LIST SORTED ITS TIME TO MOVE!")
-        self.move_to_frontier(centroids)
+        self.move_to_frontier(mapdata, centroids)
         #LETS HOME THIS WORK
         print("FINISHED MOVE")
         # rospy.sleep(10)
@@ -100,18 +104,18 @@ class FrontierNodeClient:
         #self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, edges))
         self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, centroids))
 
-        self.gotroid_pub.publish(plan.makeDisplayMsg(plan, mapdata, self.going_centroid))
+        #self.gotroid_pub.publish(plan.makeDisplayMsg(plan, mapdata, self.going_centroid))
         
             
         print("Got the edge cells!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1111")
     
     def return_to_start(self):
         starting_pose = PoseStamped()
-        starting_pose.pose.position.x = self.starting_position[0]
-        starting_pose.pose.position.y = self.starting_position[1]
+        starting_pose.pose.position.x = self.world_to_grid(self.starting_position[0])
+        starting_pose.pose.position.y = self.world_to_grid(self.starting_position[1])
         starting_pose.header.frame_id = "map"
         starting_pose.header.stamp = rospy.Time.now()
-        PathPlannerClient.path_planner_client(self, starting_pose)
+        #PathPlannerClient.path_planner_client(self, starting_pose)
 
 
     #request map from gampping
@@ -251,7 +255,7 @@ class FrontierNodeClient:
 
     
     #works by grapping odom data and then calculating the closest euclidean distance to a frontier and moving towards it
-    def move_to_frontier(self, list_of_centroids: list[tuple[int,int]]) -> PoseStamped:
+    def move_to_frontier(self, mapdata: OccupancyGrid, list_of_centroids: list[tuple[int,int]]) -> PoseStamped:
         
         
 
@@ -274,6 +278,9 @@ class FrontierNodeClient:
         go_to_pose.pose.position.y = going_partway[1]
         go_to_pose.header.frame_id = "map"
         go_to_pose.header.stamp = rospy.Time.now()
+        print("CHECK")
+        
+        self.get_astar_path(mapdata, go_to_pose)
         
         #go_to_pose.pose.orientation
         #moving to point with astar
@@ -291,7 +298,33 @@ class FrontierNodeClient:
         #return what point robot is going
         return go_to_pose
 
-    
+    def get_astar_path(self, mapdata: OccupancyGrid, goal: PoseStamped):
+
+        print("calling on server")
+
+        start = PoseStamped()
+        wp = Point()
+        wp.x = self.px
+        wp.y = self.py
+        grid_robot = self.world_to_grid(mapdata, wp)
+        
+        start.pose.position.x = grid_robot[0]
+        start.pose.position.y = grid_robot[1]
+        start.header.frame_id = "map"
+        start.header.stamp = rospy.Time.now()
+        print(start)
+        print(goal)
+        
+
+        try:
+            path_planner_call = rospy.ServiceProxy('plan_path', GetPlan)
+            resp = path_planner_call(start, goal, 0)
+            rospy.loginfo(resp.plan.poses)
+
+            return resp
+
+        except rospy.ServiceException as e:
+            print("Service call failed: %s"%e)
     
     @staticmethod
     def world_to_grid(mapdata: OccupancyGrid, wp: Point) -> tuple[int, int]:
@@ -312,6 +345,7 @@ class FrontierNodeClient:
         
 
         cell_position = (cell_coordinate_x, cell_coordinate_y)
+        
 
         return cell_position
         
@@ -324,6 +358,8 @@ class FrontierNodeClient:
         quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
         (roll, pitch, yaw) = euler_from_quaternion(quat_list)
         self.pth = yaw
+
+        
         #NEED TO UPDATE THE START
 
 
