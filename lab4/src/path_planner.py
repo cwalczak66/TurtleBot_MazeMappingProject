@@ -753,6 +753,9 @@ class PathPlanner:
         #rospy.wait_for_service('map_service')
         print("In Plan_path!")
         mapdata = PathPlanner.request_map2()
+
+        
+            
         #mapdata = self.current_map
         #PathPlanner.request_custom(self, mapdata)
         #print(mapdata)
@@ -762,7 +765,7 @@ class PathPlanner:
         print(mapdata.info.resolution)
         print(mapdata.info.height)
         print(mapdata.info.width)
-        cspacedata = self.calc_cspace(mapdata, 1)
+        cspacedata = self.calc_cspace(mapdata, 2)
         ## Execute A*
 
         

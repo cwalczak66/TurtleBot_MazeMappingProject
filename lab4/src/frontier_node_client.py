@@ -14,6 +14,7 @@ import copy
 from tf.transformations import euler_from_quaternion
 import tf
 from tf import TransformListener
+from std_msgs.msg import Bool
 
 class FrontierNodeClient:
 
@@ -43,6 +44,8 @@ class FrontierNodeClient:
         #update odom
         rospy.Subscriber('/odom', Odometry, self.update_odometry)
 
+        rospy.Subscriber('bool_topic', Bool, self.wait_for_waypoint)
+
         self.px = 0
         self.py = 0 
         self.kp = 0.1
@@ -70,24 +73,21 @@ class FrontierNodeClient:
         #     self.starting_position = (self.world_to_grid(self.px), self.world_to_grid(self.py))
         #     self.first_bool = False
 
-        orig = []
-        orig.append((0, 0))
-        #orig.append((100, 100))
-        orig.append((150, 150))
-        orig.append((200, 200))
-        orig.append((205, 240))
-        orig.append((250, 250))
-        orig.append((250, 251))
+    
 
-        print("mapdata height: " + str(mapdata.info.height))
+ 
         
         
 
         plan = PathPlanner
-        padding_cells = plan.calc_cspace2(plan, mapdata, 1)
-        
+        padding_cells = plan.calc_cspace2(plan, mapdata, 2)
+        for pc in padding_cells:
+            index = PathPlanner.grid_to_index(mapdata, pc)
+            map_list = list(mapdata.data)
+            map_list[index] = 100
+            mapdata.data = map_list
 
-        self.orig_pub.publish(plan.makeDisplayMsg(plan, mapdata, orig))
+       
 
         shape_list = self.edge_detection2(mapdata)
         edges = []
@@ -97,7 +97,17 @@ class FrontierNodeClient:
             for e_cell in shape:
                 edges.append(e_cell)
 
+        
+
         centroids = self.frontier_centroid(shape_list)
+
+        for p in centroids:
+            index = PathPlanner.grid_to_index(mapdata, p)
+            print("LOOKING AT GOAL VALUE: " + str(mapdata.data[index]))
+            full_map = list(mapdata.data)
+            full_map[index] = 0
+            mapdata.data = full_map
+            print("SHOULD NOW BE: " + str(mapdata.data[index]))
 
         for padded_cell in padding_cells:
             for c in centroids:
@@ -107,6 +117,8 @@ class FrontierNodeClient:
 
 
         print("LIST SORTED ITS TIME TO MOVE!")
+      
+
         self.move_to_frontier(mapdata, centroids)
         #LETS HOME THIS WORK
         print("FINISHED MOVE")
@@ -272,13 +284,7 @@ class FrontierNodeClient:
     #works by grapping odom data and then calculating the closest euclidean distance to a frontier and moving towards it
     def move_to_frontier(self, mapdata: OccupancyGrid, list_of_centroids: list[tuple[int,int]]) -> PoseStamped:
         
-        for p in list_of_centroids:
-            index = PathPlanner.grid_to_index(mapdata, p)
-            print("LOOKING AT GOAL VALUE: " + str(mapdata.data[index]))
-            full_map = list(mapdata.data)
-            full_map[index] = 0
-            mapdata.data = full_map
-            print("SHOULD NOW BE: " + str(mapdata.data[index]))
+        
 
         shortest_distance = 100000
         current_tuple = (0,0)
@@ -311,8 +317,9 @@ class FrontierNodeClient:
         poses = self.get_astar_path(mapdata, go_to_pose)
       
 
-        for waypoint in poses:
-            self.go_to_pub.publish(waypoint)
+        self.go_to_frontier(mapdata, poses)
+
+          
         
         #go_to_pose.pose.orientation
         #moving to point with astar
@@ -327,6 +334,19 @@ class FrontierNodeClient:
         
         #return what point robot is going
         return go_to_pose
+    
+    def go_to_frontier(self, mapdata: OccupancyGrid, poses):
+        for waypoint in poses:
+            self.go_to_pub.publish(waypoint)
+            print("waitig")
+            rospy.wait_for_message('bool_topic', Bool)
+        print("REACHED FINAL POSE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        
+        
+
+
+    def wait_for_waypoint(self):
+        pass
 
     def get_astar_path(self, mapdata: OccupancyGrid, goal: PoseStamped):
         plan = PathPlanner

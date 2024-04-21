@@ -6,6 +6,7 @@ from geometry_msgs.msg import PoseStamped
 from geometry_msgs.msg import Twist, Vector3
 from tf.transformations import euler_from_quaternion
 from math import sqrt , pi, atan2, sin, cos 
+from std_msgs.msg import Bool
 
 class Lab2:
 
@@ -23,6 +24,8 @@ class Lab2:
         ### Tell ROS that this node subscribes to Odometry messages on the '/odom' topic
         ### When a message is received, call self.update_odometry
         rospy.Subscriber('/odom', Odometry, self.update_odometry)
+
+        self.done_move_pub = rospy.Publisher('bool_topic', Bool, queue_size=10)
 
         ### Tell ROS that this node subscribes to PoseStamped messages on the '/move_base_simple/goal' topic
         ### When a message is received, call self.go_to
@@ -131,29 +134,50 @@ class Lab2:
         :param msg [PoseStamped] The target pose.
         """
         ### REQUIRED CREDIT
+        rospy.wait_for_message("/odom", Odometry)
+        #rospy.loginfo(msg)
         target_x = msg.pose.position.x
         target_y = msg.pose.position.y 
-        delta_y = target_y - self.px
-        delta_x = target_x - self.py
+        delta_y = target_y - self.py
+        delta_x = target_x - self.px 
         quat_orig = msg.pose.orientation
         quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
         (roll, pitch, yaw) = euler_from_quaternion(quat_list)
-        angle_to_pose = atan2(delta_y, delta_x)
 
+        angle_to_pose = atan2(delta_y, delta_x)
+        rospy.loginfo("target x = " + str(target_x) + " target y = " + str(target_y))
+        rospy.loginfo("current x = " + str(self.px) + " current y = " + str(self.py))
+        rospy.loginfo("delta x = " + str(delta_x) + " delta y = " + str(delta_y))
+        
         # Rotate to look at target location
         self.rotate(angle_to_pose, 0.3)
         print("rotation 1 complete!")
-        rospy.sleep(0.5)
+        rospy.sleep(1)
 
         # Drive to target location
-        distance_to_target = abs(sqrt(pow(delta_y, 2 ) + (pow(delta_x, 2))**2))
-        self.drive(distance_to_target, 0.5)
+
+        distance_to_target = abs(sqrt(pow(delta_y, 2) + (pow(delta_x, 2))**2))
+        self.drive(distance_to_target, 0.1)
         print("Reached target location!")
         rospy.sleep(0.7)
+
+
 
         # Rotate to target orientation
         self.rotate(yaw, 0.3)
         print("Reached target pose!")
+
+
+
+        print("")
+        rospy.loginfo("target x = " + str(target_x) + " target y = " + str(target_y))
+        rospy.loginfo("current x = " + str(self.px) + " current y = " + str(self.py))
+        print("")
+        print("")
+
+        bool_msg = Bool()
+        bool_msg.data = True
+        self.done_move_pub.publish(bool_msg)
 
 
 # UPDATES ROBOT CURRENT POSITION AND ORIENTATION SO OTHER FUNCTIONS KNOW WHERE TB IS IN REAL TIME
