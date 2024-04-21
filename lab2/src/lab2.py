@@ -121,6 +121,8 @@ class Lab2:
         self.send_speed(0.0,0.0)
     
 
+    
+
 #GO_TO WAITS FOR POSESTAMPED MESSAGE AND THEN MOVES TO DESIRED XYZ POSITION AND FINAL ROTATION
     def go_to(self, msg: PoseStamped):
         """

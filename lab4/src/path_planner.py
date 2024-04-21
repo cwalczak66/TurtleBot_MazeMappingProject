@@ -131,24 +131,21 @@ class PathPlanner:
         """
         ### REQUIRED CREDIT
         map_resolution = mapdata.info.resolution
-        print("resolution = " + str(map_resolution))
+     
         world_origin_x = mapdata.info.origin.position.x
-        print("origin_x = " + str(world_origin_x))
+        
         world_origin_y = mapdata.info.origin.position.y
-        print("origin_y = " + str(world_origin_y))
-        print(wp.x)
-        print(wp.y)
+      
 
         cell_coordinate_x = int((wp.x - world_origin_x) / map_resolution)
         cell_coordinate_y = int((wp.y - world_origin_y) / map_resolution)
 
-        print("cellx: " + str(cell_coordinate_x))
-        print("celly: " + str(cell_coordinate_y))
+     
 
         # cell_position = (cell_coordinate_x, cell_coordinate_y)
         
         cell_position = (int(wp.x), int(wp.y))
-        print(cell_position)
+     
         return cell_position
         
 
@@ -174,8 +171,8 @@ class PathPlanner:
                 
                 # new_pose.pose.position.x = PathPlanner.grid_to_world(mapdata, node).x - mapdata.info.origin.position.x -0.5
                 # new_pose.pose.position.y = PathPlanner.grid_to_world(mapdata, node).y - mapdata.info.origin.position.y -0.5
-                new_pose.pose.position.x = node[0]*mapdata.info.resolution
-                new_pose.pose.position.y = node[1]*mapdata.info.resolution
+                new_pose.pose.position.x = PathPlanner.grid_to_world(mapdata, node).x 
+                new_pose.pose.position.y = PathPlanner.grid_to_world(mapdata, node).y 
 
                 if (node[0] == previous[0] and node[1] > previous[1]): #North
                     new_pose.pose.orientation.z = 0.707
@@ -211,14 +208,16 @@ class PathPlanner:
             else:
                 # new_pose.pose.position.x = PathPlanner.grid_to_world(mapdata, node).x - mapdata.info.origin.position.x 
                 # new_pose.pose.position.y = PathPlanner.grid_to_world(mapdata, node).y - mapdata.info.origin.position.y
-                new_pose.pose.position.x = node[0]*mapdata.info.resolution
-                new_pose.pose.position.y = node[1]*mapdata.info.resolution
+                # new_pose.pose.position.x = node[0]*mapdata.info.resolution 
+                # new_pose.pose.position.y = node[1]*mapdata.info.resolution
+                new_pose.pose.position.x = PathPlanner.grid_to_world(mapdata, node).x 
+                new_pose.pose.position.y = PathPlanner.grid_to_world(mapdata, node).y 
                 new_pose.pose.orientation.w = 1.0
 
             poses_list.append(new_pose)
             previous = node
 
-            rospy.loginfo(new_pose)
+            #rospy.loginfo(new_pose)
 
         
         return poses_list
@@ -595,6 +594,8 @@ class PathPlanner:
             current = came_from[current]
         path.append(start) # optional
         path.reverse() # optional
+
+        self.astar_pub_frontier.publish(self.makeDisplayMsg(mapdata, path))
         return path
     
     
@@ -634,7 +635,7 @@ class PathPlanner:
         self.cells_visited_astar.publish(self.makeDisplayMsg(mapdata, path))
         
  
-        rospy.loginfo(path)
+        #rospy.loginfo(path)
         return path
     
     
@@ -677,12 +678,11 @@ class PathPlanner:
             new_direction = PathPlanner.check_change_direction(direction, next, current)
             if direction == new_direction:
                 print("direction is the same, removing node: " + str(current) + " direction: " + new_direction)
-                rospy.loginfo(current)
+                #rospy.loginfo(current)
                 optimized_path.remove(current)
             direction = PathPlanner.check_change_direction(direction, next, current)
                 
-        
-        rospy.loginfo(optimized_path)
+       
         return optimized_path
                 
           
@@ -783,6 +783,7 @@ class PathPlanner:
 
         ## Optimize waypoints
         waypoints = PathPlanner.optimize_path(path)
+      
         ## Return a Path message
         self.path_solution.publish(self.path_to_message(cspacedata, waypoints)) 
         #print("waypoints:" + waypoints)

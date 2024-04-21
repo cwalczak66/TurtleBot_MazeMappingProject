@@ -12,6 +12,8 @@ from path_planner import PathPlanner
 from path_planner_client import PathPlannerClient
 import copy
 from tf.transformations import euler_from_quaternion
+import tf
+from tf import TransformListener
 
 class FrontierNodeClient:
 
@@ -68,11 +70,24 @@ class FrontierNodeClient:
         #     self.starting_position = (self.world_to_grid(self.px), self.world_to_grid(self.py))
         #     self.first_bool = False
 
+        orig = []
+        orig.append((0, 0))
+        #orig.append((100, 100))
+        orig.append((150, 150))
+        orig.append((200, 200))
+        orig.append((205, 240))
+        orig.append((250, 250))
+        orig.append((250, 251))
+
+        print("mapdata height: " + str(mapdata.info.height))
+        
         
 
         plan = PathPlanner
         padding_cells = plan.calc_cspace2(plan, mapdata, 1)
         
+
+        self.orig_pub.publish(plan.makeDisplayMsg(plan, mapdata, orig))
 
         shape_list = self.edge_detection2(mapdata)
         edges = []
@@ -231,8 +246,8 @@ class FrontierNodeClient:
             for x, y in edge_cell_list:
                 cell_coordinate_x += x
                 cell_coordinate_y += y
-                print("x coordinate: " + str(cell_coordinate_x))
-                print("y coordinate: " + str(cell_coordinate_y))  
+                # print("x coordinate: " + str(cell_coordinate_x))
+                # print("y coordinate: " + str(cell_coordinate_y))  
 
             cell_coordinate_x /= num_items_in_sublist 
             cell_coordinate_y /= num_items_in_sublist 
@@ -257,54 +272,70 @@ class FrontierNodeClient:
     #works by grapping odom data and then calculating the closest euclidean distance to a frontier and moving towards it
     def move_to_frontier(self, mapdata: OccupancyGrid, list_of_centroids: list[tuple[int,int]]) -> PoseStamped:
         
-        
+        for p in list_of_centroids:
+            index = PathPlanner.grid_to_index(mapdata, p)
+            print("LOOKING AT GOAL VALUE: " + str(mapdata.data[index]))
+            full_map = list(mapdata.data)
+            full_map[index] = 0
+            mapdata.data = full_map
+            print("SHOULD NOW BE: " + str(mapdata.data[index]))
 
         shortest_distance = 100000
         current_tuple = (0,0)
+        start_pos = PoseStamped()
+        wp = Point()
+        wp.x = self.px
+        print("CURRENT X WORLD: "+str(wp.x))
+        wp.y = self.py
+        grid_robot = self.world_to_grid(mapdata, wp)
+        
+        
         
         #loop to find closest
         print("finding closest")
-        for x,y in list_of_centroids:
-            current_dist = PathPlanner.euclidean_distance((self.px, self.py),(x,y))
-            if current_dist < shortest_distance:
-                current_tuple = (x,y)
-                shortest_distance = current_dist
         
-        #not going full way
-        going_partway = (current_tuple[0]/2, current_tuple[1]/2)
-        #creating pose_stamped
+        for frontier in list_of_centroids:
+            distance = PathPlanner.euclidean_distance(grid_robot, frontier)
+            if distance < shortest_distance:
+                shortest_distance = distance
+                current_tuple = frontier
+        
+       
         go_to_pose = PoseStamped()
-        go_to_pose.pose.position.x = going_partway[0]
-        go_to_pose.pose.position.y = going_partway[1]
+        go_to_pose.pose.position.x = current_tuple[0]
+        go_to_pose.pose.position.y = current_tuple[1]
         go_to_pose.header.frame_id = "map"
         go_to_pose.header.stamp = rospy.Time.now()
         print("CHECK")
         
-        self.get_astar_path(mapdata, go_to_pose)
+        poses = self.get_astar_path(mapdata, go_to_pose)
+      
+
+        for waypoint in poses:
+            self.go_to_pub.publish(waypoint)
         
         #go_to_pose.pose.orientation
         #moving to point with astar
         print("FOUND POINT TIME TO ASTAR")
         print(current_tuple[0], current_tuple[1])
-        print(going_partway[0], going_partway[1])
+    
         #suppose to move but doesnt :()
         #PathPlannerClient.path_planner_client(self, go_to_pose)
 
         #global value just for rviz and testing
-        self.going_centroid.append(going_partway)
-
-        self.go_to_pub.publish(go_to_pose)
+        
         
         #return what point robot is going
         return go_to_pose
 
     def get_astar_path(self, mapdata: OccupancyGrid, goal: PoseStamped):
-
+        plan = PathPlanner
         print("calling on server")
 
         start = PoseStamped()
         wp = Point()
         wp.x = self.px
+        print("CURRENT X WORLD: "+str(wp.x))
         wp.y = self.py
         grid_robot = self.world_to_grid(mapdata, wp)
         
@@ -312,19 +343,28 @@ class FrontierNodeClient:
         start.pose.position.y = grid_robot[1]
         start.header.frame_id = "map"
         start.header.stamp = rospy.Time.now()
-        print(start)
-        print(goal)
+       
         
 
         try:
             path_planner_call = rospy.ServiceProxy('plan_path', GetPlan)
             resp = path_planner_call(start, goal, 0)
-            rospy.loginfo(resp.plan.poses)
+            #rospy.loginfo(resp.plan.poses)
 
-            return resp
+            # list_of_grid_cells = []
+
+            # for pose in resp.plan.poses:
+            #     list_of_grid_cells.append(self.world_to_grid(mapdata, pose.pose.position))
+
+            # for p in list_of_grid_cells:
+            #     print(p)
+
+            # self.orig_pub.publish(plan.makeDisplayMsg(plan, mapdata, list_of_grid_cells))
+
+            return resp.plan.poses
 
         except rospy.ServiceException as e:
-            print("Service call failed: %s"%e)
+            print("Service call has failed: %s"%e)
     
     @staticmethod
     def world_to_grid(mapdata: OccupancyGrid, wp: Point) -> tuple[int, int]:
@@ -336,8 +376,10 @@ class FrontierNodeClient:
         """
         ### REQUIRED CREDIT
         map_resolution = mapdata.info.resolution
-        world_origin_x = mapdata.info.origin.position.x
+        world_origin_x = mapdata.info.origin.position.x 
         world_origin_y = mapdata.info.origin.position.y
+
+
 
         cell_coordinate_x = int((wp.x - world_origin_x) / map_resolution)
         cell_coordinate_y = int((wp.y - world_origin_y) / map_resolution)
@@ -345,6 +387,10 @@ class FrontierNodeClient:
         
 
         cell_position = (cell_coordinate_x, cell_coordinate_y)
+        print("GIVEN X: " + str(wp.x))
+        print("GIVEN WORLD ORIGIN: " + str(world_origin_x))
+        print("MAP RESOLUTION: " + str(map_resolution))
+        print("CURRENT CELL: " + str(cell_position))
         
 
         return cell_position
@@ -352,8 +398,8 @@ class FrontierNodeClient:
     def update_odometry(self, odom_msg: Odometry):
     
     
-        self.px = odom_msg.pose.pose.position.x + 4.8
-        self.py = odom_msg.pose.pose.position.y + 4.8
+        self.px = odom_msg.pose.pose.position.x 
+        self.py = odom_msg.pose.pose.position.y 
         quat_orig = odom_msg.pose.pose.orientation
         quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
         (roll, pitch, yaw) = euler_from_quaternion(quat_list)
