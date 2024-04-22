@@ -382,6 +382,13 @@ class FrontierNodeClient:
 
             # self.orig_pub.publish(plan.makeDisplayMsg(plan, mapdata, list_of_grid_cells))
 
+            if not resp.plan.poses:
+                print("ERROR ERROR ERROR TRY SOMETHINGS ELSEEEEEE")
+                return None
+            else:
+                return resp.plan.poses
+
+
             return resp.plan.poses
 
         except rospy.ServiceException as e:
