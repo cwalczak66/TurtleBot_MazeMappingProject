@@ -26,7 +26,7 @@ class FrontierNodeClient:
         rospy.Subscriber('/map', OccupancyGrid, self.frontier_path_handler)
         self.go_to_pub = rospy.Publisher('move_base_simple/goal', PoseStamped, queue_size=10)
 
-        self.orig_pub = rospy.Publisher('/origin', GridCells, queue_size=10)
+        self.dest_pub = rospy.Publisher('/dest', GridCells, queue_size=10)
         self.cspace_pub = rospy.Publisher('/plan_path/cspace', GridCells, queue_size=10)
         self.edge_cells_pub = rospy.Publisher('/edge_cells', GridCells, queue_size=10)
         self.gotroid_pub = rospy.Publisher('/gotroid', GridCells , queue_size=10 )
@@ -67,19 +67,14 @@ class FrontierNodeClient:
     def frontier_path_handler(self, mapdata:OccupancyGrid):
         #requestion map from gmapping
         print("in the handler")
-        
-        
-        # if self.first_bool == True:
-        #     self.starting_position = (self.world_to_grid(self.px), self.world_to_grid(self.py))
-        #     self.first_bool = False
+        rospy.sleep(1)
+       
 
-    
-
- 
-        
         
 
         plan = PathPlanner
+        mapdata = plan.request_map2()
+        rospy.sleep(1)
         padding_cells = plan.calc_cspace2(plan, mapdata, 2)
         for pc in padding_cells:
             index = PathPlanner.grid_to_index(mapdata, pc)
@@ -100,19 +95,19 @@ class FrontierNodeClient:
         
 
         centroids = self.frontier_centroid(shape_list)
+        self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, centroids))
 
         for p in centroids:
             index = PathPlanner.grid_to_index(mapdata, p)
-            print("LOOKING AT GOAL VALUE: " + str(mapdata.data[index]))
             full_map = list(mapdata.data)
             full_map[index] = 0
             mapdata.data = full_map
-            print("SHOULD NOW BE: " + str(mapdata.data[index]))
+           
 
-        for padded_cell in padding_cells:
-            for c in centroids:
-                if c == padded_cell:
-                    centroids.remove(c)
+        # for padded_cell in padding_cells:
+        #     for c in centroids:
+        #         if c == padded_cell:
+        #             centroids.remove(c)
                 
 
 
@@ -129,7 +124,7 @@ class FrontierNodeClient:
         self.cspace_pub.publish(plan.makeDisplayMsg(plan, mapdata, padding_cells))
 
         #self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, edges))
-        self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, centroids))
+        
 
         #self.gotroid_pub.publish(plan.makeDisplayMsg(plan, mapdata, self.going_centroid))
         
@@ -171,8 +166,8 @@ class FrontierNodeClient:
     def find_shape(self, mapdata: OccupancyGrid, p: tuple[int, int]) -> list[tuple[int, int]]:
         shape = []
         shape.append(p)
-        notDone = True
-        plan = PathPlanner
+        
+        
         queue = []     #Initialize a queue
         visited = [] # List for visited nodes.
         visited.append(p)
@@ -288,7 +283,7 @@ class FrontierNodeClient:
 
         shortest_distance = 100000
         current_tuple = (0,0)
-        start_pos = PoseStamped()
+        
         wp = Point()
         wp.x = self.px
         print("CURRENT X WORLD: "+str(wp.x))
@@ -306,7 +301,12 @@ class FrontierNodeClient:
                 shortest_distance = distance
                 current_tuple = frontier
         
-       
+        check = PathPlanner
+        print("CURRENT TUPLE ========================" + str(current_tuple))
+        destination = []
+        destination.append(current_tuple)
+        self.dest_pub.publish(check.makeDisplayMsg(check, mapdata, destination))
+
         go_to_pose = PoseStamped()
         go_to_pose.pose.position.x = current_tuple[0]
         go_to_pose.pose.position.y = current_tuple[1]
@@ -315,7 +315,8 @@ class FrontierNodeClient:
         print("CHECK")
         
         poses = self.get_astar_path(mapdata, go_to_pose)
-      
+       
+
 
         self.go_to_frontier(mapdata, poses)
 
@@ -345,7 +346,7 @@ class FrontierNodeClient:
         
 
 
-    def wait_for_waypoint(self):
+    def wait_for_waypoint(self, msg: Bool):
         pass
 
     def get_astar_path(self, mapdata: OccupancyGrid, goal: PoseStamped):
@@ -385,6 +386,7 @@ class FrontierNodeClient:
 
         except rospy.ServiceException as e:
             print("Service call has failed: %s"%e)
+            return None
     
     @staticmethod
     def world_to_grid(mapdata: OccupancyGrid, wp: Point) -> tuple[int, int]:

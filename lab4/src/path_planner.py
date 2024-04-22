@@ -78,7 +78,7 @@ class PathPlanner:
 
 
     @staticmethod
-    def euclidean_distance(p1: tuple[float, float], p2: tuple[float, float]) -> float:
+    def euclidean_distance(a: tuple[float, float], b: tuple[float, float]) -> float:
         """
         Calculates the Euclidean distance between two points.
         :param p1 [(float, float)] first point.
@@ -86,15 +86,12 @@ class PathPlanner:
         :return   [float]          distance.
         """
         ### REQUIRED CREDIT
-        initial_point_x = p1[0]
-        initial_point_y = p1[1]
-        final_point_x = p2[0]
-        final_point_y = p2[1]
+        ax = a[0]
+        ay = a[1]
+        bx = b[0]
+        by = b[1]
 
-
-        euclid_distance = abs(sqrt(pow(final_point_y - initial_point_y, 2 ) + (pow(final_point_x - initial_point_x, 2))**2))
-
-        return euclid_distance
+        return sqrt(pow(ax - bx, 2) + pow(ay - by, 2)) #Euclidean distance
         
 
 
