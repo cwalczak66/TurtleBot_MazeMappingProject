@@ -17,7 +17,7 @@ from tf.transformations import euler_from_quaternion
 import tf
 from tf import TransformListener
 from std_msgs.msg import Bool
-from math import pi,sum
+from math import pi
 import numpy as np
 
 class FrontierNodeClient:
