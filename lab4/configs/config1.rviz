@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Grid1
         - /TF1/Frames1
+        - /Map1
         - /GridCells2
         - /Path1
       Splitter Ratio: 0.594406008720398
@@ -36,7 +37,7 @@ Visualization Manager:
   Class: ""
   Displays:
     - Alpha: 0.5
-      Cell Size: 0.05000000074505806
+      Cell Size: 0.02500000037252903
       Class: rviz/Grid
       Color: 160; 160; 164
       Enabled: true
@@ -281,4 +282,4 @@ Window Geometry:
     collapsed: true
   Width: 2484
   X: 575
-  Y: 346
+  Y: 272
