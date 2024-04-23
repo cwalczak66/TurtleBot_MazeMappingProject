@@ -55,6 +55,9 @@ class PathPlanner:
 
 
         self.current_map = OccupancyGrid()
+        self.cspace1 = []
+        self.cspace2 = []
+        self.cspace3 = []
         
         ## Initialize the request counter
         self.request_counter = 0
@@ -578,7 +581,13 @@ class PathPlanner:
         bx = b[0]
         by = b[1]
 
-        return sqrt(pow(ax - bx, 2) + pow(ay - by, 2)) #Euclidean distance
+        final_cost = sqrt(pow(ax - bx, 2) + pow(ay - by, 2)) #Euclidean distance
+
+        if b in self.cspace1:
+            final_cost = final_cost + 2
+        
+      
+        return final_cost
 
     def reconstruct_path(self, mapdata: OccupancyGrid, came_from: list[tuple[int,int]], start: tuple[int, int], goal: tuple[int, int]) -> list[tuple[int, int]]:
 
@@ -765,7 +774,7 @@ class PathPlanner:
         print(mapdata.info.height)
         print(mapdata.info.width)
 
-        
+        self.cspace1 = self.calc_cspace2(mapdata, 3)
 
         cspacedata = self.calc_cspace(mapdata, 1)
         ## Execute A*
