@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 from queue import Empty
-from lab2.src.lab2 import Lab2
+#from lab2.src.lab2 import Lab2
 import rospy
 from nav_msgs.msg import Odometry
 from nav_msgs.srv import GetPlan, GetMap
-from geometry_msgs.msg import PoseStamped, Point, PoseWithCovarianceStamped
+from geometry_msgs.msg import PoseStamped, Point, PoseWithCovarianceStamped, Twist
 from nav_msgs.msg import GridCells, OccupancyGrid, Path
 from map_msgs.msg import OccupancyGridUpdate
 from path_planner import PathPlanner
@@ -82,8 +82,50 @@ class FrontierNodeClient:
         self.amclow = 0 
 
 
+    def rotate(self, angle: float, aspeed: float):
+        """
+        Rotates the robot around the body center by the given angle.
+        :param angle         [float] [rad]   The distance to cover.
+        :param angular_speed [float] [rad/s] The angular speed.
+        """
+        ### REQUIRED CREDIT
+        ang_tol = 0.09
+        rospy.wait_for_message("/odom", Odometry) #wait for angle update before execution
+        rate = rospy.Rate(10) # Publish rate of 10Hz
+
+        while not rospy.is_shutdown():
+            angle_difference = (angle - self.pth)% (2* pi)
+            print(f'target angle: {angle * (180/pi)} current angle: {self.pth * (180/pi)} angle difference: {angle_difference * (180/pi)}')
+            # Normalizing angle difference to range btw pi and -pi
+            #angle_difference = atan2(sin(angle_difference), cos(angle_difference))
+            #print(angle_difference)
+            while angle_difference > pi:
+                angle_difference = angle_difference - 2 * pi
+            while angle_difference < -pi:
+                angle_difference = angle_difference + 2*pi
+            rate.sleep()
+            
+            if abs(angle_difference) <= ang_tol:
+                self.send_speed(0.0,0.0)
+                rospy.sleep(0.5)
+                self.send_speed(0,0)
+                print("reached goal!")
+                break
+            else:
+                # Normalizing angle difference to range btw pi and -pi
+                if angle_difference > 0:    
+                    self.send_speed(0, aspeed) #clockwise
+                else:
+                    self.send_speed(0, -aspeed) #anticlockwise
+                rospy.sleep(0.5)
+        
+        self.send_speed(0,0)
+        print("robot should stop now")
+        self.send_speed(0.0,0.0)
+    
     #Turns the robot once AMCL is running to localize the bot in the map
     #Poststamped msg is the goal pose provided in rviz
+    
     
     # def localization(self):
     #     rospy.loginfo("Requesting localization from AMCL")
@@ -98,7 +140,7 @@ class FrontierNodeClient:
 
         # Do a minimum number of turns and then keep turning until we are very confident about our location or we've turned for too long
         while (number_of_turns < 5 or self.covariance > 0.1) and number_of_turns < 10:
-            Lab2.rotate(pi / 2)
+            self.rotate(pi / 2, 0.1)
             number_of_turns += 1
             rospy.sleep(.75)
         
@@ -131,7 +173,8 @@ class FrontierNodeClient:
         
 
         plan = PathPlanner
-        mapdata = plan.request_map2()
+        mapdata = plan.request_map() # mapdata of amcl map from static map taken from map server
+        #mapdata = plan.request_map2()
         rospy.sleep(1)
         padding_cells = plan.calc_cspace2(plan, mapdata, 2)
         for pc in padding_cells:
