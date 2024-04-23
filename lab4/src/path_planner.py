@@ -764,7 +764,10 @@ class PathPlanner:
         print(mapdata.info.resolution)
         print(mapdata.info.height)
         print(mapdata.info.width)
-        cspacedata = self.calc_cspace(mapdata, 2)
+
+        
+
+        cspacedata = self.calc_cspace(mapdata, 1)
         ## Execute A*
 
         
