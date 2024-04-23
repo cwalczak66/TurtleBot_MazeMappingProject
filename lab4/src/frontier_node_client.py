@@ -95,8 +95,6 @@ class FrontierNodeClient:
 
         number_of_turns = 0 # Start at 0 turns done
         #("rosservice call /global_localization") # Scatter a bunch of potential robot positions around the map for amcl to sort through
-        #rospy.loginfo("Requesting localization from AMCL")
-        #localization_request = rospy.ServiceProxy('/global_localization', Empty)
 
         # Do a minimum number of turns and then keep turning until we are very confident about our location or we've turned for too long
         while (number_of_turns < 5 or self.covariance > 0.1) and number_of_turns < 10:
