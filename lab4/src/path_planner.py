@@ -55,6 +55,9 @@ class PathPlanner:
 
 
         self.current_map = OccupancyGrid()
+        self.cspace1 = []
+        self.cspace2 = []
+        self.cspace3 = []
         
         ## Initialize the request counter
         self.request_counter = 0
@@ -78,7 +81,7 @@ class PathPlanner:
 
 
     @staticmethod
-    def euclidean_distance(p1: tuple[float, float], p2: tuple[float, float]) -> float:
+    def euclidean_distance(a: tuple[float, float], b: tuple[float, float]) -> float:
         """
         Calculates the Euclidean distance between two points.
         :param p1 [(float, float)] first point.
@@ -86,15 +89,13 @@ class PathPlanner:
         :return   [float]          distance.
         """
         ### REQUIRED CREDIT
-        initial_point_x = p1[0]
-        initial_point_y = p1[1]
-        final_point_x = p2[0]
-        final_point_y = p2[1]
+        ax = a[0]
+        ay = a[1]
+        bx = b[0]
+        by = b[1]
+        #testing
 
-
-        euclid_distance = abs(sqrt(pow(final_point_y - initial_point_y, 2 ) + (pow(final_point_x - initial_point_x, 2))**2))
-
-        return euclid_distance
+        return sqrt(pow(ax - bx, 2) + pow(ay - by, 2)) #Euclidean distance
         
 
 
@@ -131,16 +132,21 @@ class PathPlanner:
         """
         ### REQUIRED CREDIT
         map_resolution = mapdata.info.resolution
+     
         world_origin_x = mapdata.info.origin.position.x
+        
         world_origin_y = mapdata.info.origin.position.y
+      
 
         cell_coordinate_x = int((wp.x - world_origin_x) / map_resolution)
         cell_coordinate_y = int((wp.y - world_origin_y) / map_resolution)
 
+     
+
+        # cell_position = (cell_coordinate_x, cell_coordinate_y)
         
-
-        cell_position = (cell_coordinate_x, cell_coordinate_y)
-
+        cell_position = (int(wp.x), int(wp.y))
+     
         return cell_position
         
 
@@ -166,8 +172,8 @@ class PathPlanner:
                 
                 # new_pose.pose.position.x = PathPlanner.grid_to_world(mapdata, node).x - mapdata.info.origin.position.x -0.5
                 # new_pose.pose.position.y = PathPlanner.grid_to_world(mapdata, node).y - mapdata.info.origin.position.y -0.5
-                new_pose.pose.position.x = node[0]*mapdata.info.resolution
-                new_pose.pose.position.y = node[1]*mapdata.info.resolution
+                new_pose.pose.position.x = PathPlanner.grid_to_world(mapdata, node).x 
+                new_pose.pose.position.y = PathPlanner.grid_to_world(mapdata, node).y 
 
                 if (node[0] == previous[0] and node[1] > previous[1]): #North
                     new_pose.pose.orientation.z = 0.707
@@ -203,14 +209,16 @@ class PathPlanner:
             else:
                 # new_pose.pose.position.x = PathPlanner.grid_to_world(mapdata, node).x - mapdata.info.origin.position.x 
                 # new_pose.pose.position.y = PathPlanner.grid_to_world(mapdata, node).y - mapdata.info.origin.position.y
-                new_pose.pose.position.x = node[0]*mapdata.info.resolution
-                new_pose.pose.position.y = node[1]*mapdata.info.resolution
+                # new_pose.pose.position.x = node[0]*mapdata.info.resolution 
+                # new_pose.pose.position.y = node[1]*mapdata.info.resolution
+                new_pose.pose.position.x = PathPlanner.grid_to_world(mapdata, node).x 
+                new_pose.pose.position.y = PathPlanner.grid_to_world(mapdata, node).y 
                 new_pose.pose.orientation.w = 1.0
 
             poses_list.append(new_pose)
             previous = node
 
-            rospy.loginfo(new_pose)
+            #rospy.loginfo(new_pose)
 
         
         return poses_list
@@ -230,8 +238,8 @@ class PathPlanner:
         ### REQUIRED CREDIT
         map_boundary_x = mapdata.info.width # no.of cells
         map_boundary_y = mapdata.info.height # no.of cells
-        map_origin_x = int(mapdata.info.origin.position.x) + 5
-        map_origin_y = int(mapdata.info.origin.position.y) + 5
+        map_origin_x = int(mapdata.info.origin.position.x) + 10
+        map_origin_y = int(mapdata.info.origin.position.y) + 10
         cell_walkable = True
         cell_free = True
 
@@ -423,7 +431,7 @@ class PathPlanner:
         try:  
             get_map = rospy.ServiceProxy('/dynamic_map', GetMap)
             
-            print(get_map().map)
+            # print(get_map().map)
             return get_map().map
         
 
@@ -573,7 +581,13 @@ class PathPlanner:
         bx = b[0]
         by = b[1]
 
-        return sqrt(pow(ax - bx, 2) + pow(ay - by, 2)) #Euclidean distance
+        final_cost = sqrt(pow(ax - bx, 2) + pow(ay - by, 2)) #Euclidean distance
+
+        if b in self.cspace1:
+            final_cost = final_cost + 2
+        
+      
+        return final_cost
 
     def reconstruct_path(self, mapdata: OccupancyGrid, came_from: list[tuple[int,int]], start: tuple[int, int], goal: tuple[int, int]) -> list[tuple[int, int]]:
 
@@ -587,6 +601,8 @@ class PathPlanner:
             current = came_from[current]
         path.append(start) # optional
         path.reverse() # optional
+
+        self.astar_pub_frontier.publish(self.makeDisplayMsg(mapdata, path))
         return path
     
     
@@ -626,7 +642,7 @@ class PathPlanner:
         self.cells_visited_astar.publish(self.makeDisplayMsg(mapdata, path))
         
  
-        rospy.loginfo(path)
+        #rospy.loginfo(path)
         return path
     
     
@@ -669,12 +685,11 @@ class PathPlanner:
             new_direction = PathPlanner.check_change_direction(direction, next, current)
             if direction == new_direction:
                 print("direction is the same, removing node: " + str(current) + " direction: " + new_direction)
-                rospy.loginfo(current)
+                #rospy.loginfo(current)
                 optimized_path.remove(current)
             direction = PathPlanner.check_change_direction(direction, next, current)
                 
-        
-        rospy.loginfo(optimized_path)
+       
         return optimized_path
                 
           
@@ -745,17 +760,26 @@ class PathPlanner:
         #rospy.wait_for_service('map_service')
         print("In Plan_path!")
         mapdata = PathPlanner.request_map2()
+
+        
+            
         #mapdata = self.current_map
         #PathPlanner.request_custom(self, mapdata)
         #print(mapdata)
         if mapdata is None:
             return Path()
         ## Calculate the C-space and publish it
+        self.current_map = mapdata
         print(mapdata.info.resolution)
         print(mapdata.info.height)
         print(mapdata.info.width)
+
+        self.cspace1 = self.calc_cspace2(mapdata, 3)
+
         cspacedata = self.calc_cspace(mapdata, 1)
         ## Execute A*
+
+        
 
     #    start = PathPlanner.world_to_grid(mapdata, msg.start.pose.position)
     #    goal  = PathPlanner.world_to_grid(mapdata, msg.goal.pose.position)
@@ -763,6 +787,9 @@ class PathPlanner:
         print("plan path handler a*")
         start = PathPlanner.world_to_grid(cspacedata, msg.start.pose.position)
         goal  = PathPlanner.world_to_grid(cspacedata, msg.goal.pose.position)
+        
+        print(start)
+        print(goal)
         path  = self.a_star(cspacedata, start, goal)
         ## Return a Path message
         
@@ -770,6 +797,7 @@ class PathPlanner:
 
         ## Optimize waypoints
         waypoints = PathPlanner.optimize_path(path)
+      
         ## Return a Path message
         self.path_solution.publish(self.path_to_message(cspacedata, waypoints)) 
         #print("waypoints:" + waypoints)
