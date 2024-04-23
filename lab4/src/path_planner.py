@@ -90,6 +90,7 @@ class PathPlanner:
         ay = a[1]
         bx = b[0]
         by = b[1]
+        #testing
 
         return sqrt(pow(ax - bx, 2) + pow(ay - by, 2)) #Euclidean distance
         
