@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from queue import Empty
+from lab2.src.lab2 import Lab2
 import rospy
 from nav_msgs.msg import Odometry
 from nav_msgs.srv import GetPlan, GetMap
@@ -12,6 +14,8 @@ from path_planner import PathPlanner
 from path_planner_client import PathPlannerClient
 import copy
 from tf.transformations import euler_from_quaternion
+from math import pi,sum
+import numpy as np
 
 class FrontierNodeClient:
 
@@ -37,7 +41,7 @@ class FrontierNodeClient:
         #rospy.Subscriber('/map', OccupancyGrid, self.update_map)
 
         #subscriber for amcl
-        rospy.Subscriber('amcl_pose', PoseWithCovarianceStamped , self.amcl_callback)
+        rospy.Subscriber('amcl_pose', PoseWithCovarianceStamped , self.update_covariance)
         
         #WHEN THE AMCL WORKS WE GIVE IT ANOTHER NAV GOAL AFTER LOCALIZATION
         rospy.Subscriber('move_base_simple/goal', PoseStamped, self.amcl_move)
@@ -64,6 +68,7 @@ class FrontierNodeClient:
         self.going_centroid = []
         self.amclx = 0
         self.amcly = 0
+        self.amcl_theta = 0
         self.amclcovariance = 0
         self.amclox = 0
         self.amcloy = 0
@@ -71,22 +76,45 @@ class FrontierNodeClient:
         self.amclow = 0 
 
 
-    #get positions from amcl(estimated position)
-    def amcl_callback(self, msg:PoseWithCovarianceStamped):
+    #Turns the robot once AMCL is running to localize the bot in the map
+    #Poststamped msg is the goal pose provided in rviz
+    
+    # def localization(self):
+    #     rospy.loginfo("Requesting localization from AMCL")
+    #     localization_request = rospy.ServiceProxy('/global_localization', Empty)
+        
+    #     return localization_request
+    
+    def amcl_move(self, msg:PoseStamped):
+
+        number_of_turns = 0 # Start at 0 turns done
+        #("rosservice call /global_localization") # Scatter a bunch of potential robot positions around the map for amcl to sort through
+        #rospy.loginfo("Requesting localization from AMCL")
+        #localization_request = rospy.ServiceProxy('/global_localization', Empty)
+
+        # Do a minimum number of turns and then keep turning until we are very confident about our location or we've turned for too long
+        while (number_of_turns < 5 or self.covariance > 0.1) and number_of_turns < 10:
+            Lab2.rotate(pi / 2)
+            number_of_turns += 1
+            rospy.sleep(.75)
+        
+        # Moving the robot to the goal once localized
+        rospy.loginfo("Localized. Driving to goal")
+        self.go_to_pub.publish(msg)
+        #PathPlannerClient.path_planner_client(self, msg)
+    
+    #Update the covariance when receiving a message from amcl_pose
+    #Covariance is the sum of the diagonal elements of the covariance matrix
+    def update_covariance(self, msg: PoseWithCovarianceStamped) -> None:
+     
+        covariance_matrix = np.reshape(msg.pose.covariance, (6,6)) # 36 long, 6 x 6 covariance matrix
+        self.covariance = np.sum(np.diag(covariance_matrix)) # Get sum of diagonal elements of covariance matrix
+        
         self.amclx = msg.pose.pose.position.x
         self.amcly = msg.pose.pose.position.y
-        self.amclcovariance = msg.pose.covariance
-        self.amclox = msg.pose.pose.orientation.x
-        self.amcloy = msg.pose.pose.orientation.y
-        self.amcloz = msg.pose.pose.orientation.z
-        self.amclow = msg.pose.pose.orientation.w
-
-    def amcl_move(self, msg:PoseStamped):
-        #need to localize with the amcl
-        PathPlannerClient.path_planner_client(self, msg)
-
-
-
+        self.amcl_theta = msg.pose.pose.orientation.w
+    
+    
 
     #commulative service that takes in a  map(Occumpancy Grid)
     #returns a poseStamped(a place in the frontier to navigate to)
