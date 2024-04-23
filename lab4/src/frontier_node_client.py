@@ -307,14 +307,25 @@ class FrontierNodeClient:
         destination.append(current_tuple)
         self.dest_pub.publish(check.makeDisplayMsg(check, mapdata, destination))
 
+        
+
         go_to_pose = PoseStamped()
         go_to_pose.pose.position.x = current_tuple[0]
         go_to_pose.pose.position.y = current_tuple[1]
         go_to_pose.header.frame_id = "map"
         go_to_pose.header.stamp = rospy.Time.now()
         print("CHECK")
+
         
+        
+
         poses = self.get_astar_path(mapdata, go_to_pose)
+
+        #if astar returns no path, go to next frontier
+        if poses == None:
+            rospy.loginfo("NO PATH CAME BACK, GO TO NEXT FRONTIER**********************************")
+            list_of_centroids.remove(current_tuple)
+            self.move_to_frontier(mapdata, list_of_centroids)
        
 
 
