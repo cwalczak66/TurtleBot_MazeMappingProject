@@ -321,6 +321,8 @@ class FrontierNodeClient:
 
         poses = self.get_astar_path(mapdata, go_to_pose)
 
+
+
         #if astar returns no path, go to next frontier
         if poses == None:
             rospy.loginfo("NO PATH CAME BACK, GO TO NEXT FRONTIER**********************************")
@@ -348,6 +350,21 @@ class FrontierNodeClient:
         return go_to_pose
     
     def go_to_frontier(self, mapdata: OccupancyGrid, poses):
+
+        # for i in range(len(poses)):
+        #     print("poses len: " + str(len(poses)))
+        #     if i > int(len(poses)/2):
+        #         print("i: " + str(i))
+        #         poses.remove(poses[i])
+        if len(poses) >= 3:
+
+            midpoint = len(poses) // 2
+            poses = poses[:midpoint]
+        elif len(poses) == 2:
+            poses.remove(poses[len(poses)-1])
+            
+
+
         for waypoint in poses:
             self.go_to_pub.publish(waypoint)
             print("waitig")

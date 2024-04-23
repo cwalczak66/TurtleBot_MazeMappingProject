@@ -89,7 +89,7 @@ class Lab2:
         :param angular_speed [float] [rad/s] The angular speed.
         """
         ### REQUIRED CREDIT
-        ang_tol = 0.08
+        ang_tol = 0.09
         rospy.wait_for_message("/odom", Odometry) #wait for angle update before execution
         rate = rospy.Rate(10) # Publish rate of 10Hz
 
@@ -150,21 +150,21 @@ class Lab2:
         rospy.loginfo("delta x = " + str(delta_x) + " delta y = " + str(delta_y))
         
         # Rotate to look at target location
-        self.rotate(angle_to_pose, 0.3)
+        self.rotate(angle_to_pose, 0.4)
         print("rotation 1 complete!")
         rospy.sleep(1)
 
         # Drive to target location
 
         distance_to_target = abs(sqrt(pow(delta_y, 2) + (pow(delta_x, 2))**2))
-        self.drive(distance_to_target, 0.1)
+        self.drive(distance_to_target, 0.12)
         print("Reached target location!")
         rospy.sleep(0.7)
 
 
 
         # Rotate to target orientation
-        self.rotate(yaw, 0.3)
+        self.rotate(yaw, 0.4)
         print("Reached target pose!")
 
 
