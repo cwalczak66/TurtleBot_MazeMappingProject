@@ -154,7 +154,7 @@ class FrontierNodeClient:
         
     #     return localization_request
     
-    def amcl_move(self, msg:PoseStamped):
+    def amcl_move(self, msg:PoseWithCovarianceStamped):
 
         number_of_turns = 0 # Start at 0 turns done
         #("rosservice call /global_localization") # Scatter a bunch of potential robot positions around the map for amcl to sort through
@@ -168,7 +168,17 @@ class FrontierNodeClient:
         
         # Moving the robot to the goal once localized
         rospy.loginfo("Localized. Driving to goal")
-        self.go_to_pub.publish(msg)
+        go_to_msg = PoseStamped()
+        go_to_msg.header.frame_id = "map"
+        go_to_msg.header.stamp = rospy.Time.now
+        go_to_msg.pose = msg.pose.pose
+
+
+
+
+
+
+        self.go_to_pub.publish(go_to_msg)
         #PathPlannerClient.path_planner_client(self, msg)
     
     #Update the covariance when receiving a message from amcl_pose
