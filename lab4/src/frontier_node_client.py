@@ -70,6 +70,9 @@ class FrontierNodeClient:
         # yaw angle
         self.pth = 0  
         self.starting_position = (0, 0)
+
+        self.home = (0,0)
+        self.got_home = True
  
         #self.going_partway = 0
         self.going_centroid = []
@@ -160,8 +163,7 @@ class FrontierNodeClient:
         self.amclx = msg.pose.pose.position.x
         self.amcly = msg.pose.pose.position.y
         self.amcl_theta = msg.pose.pose.orientation.w
-            self.home = (0,0)
-        self.got_home = True
+        
 
         
 
