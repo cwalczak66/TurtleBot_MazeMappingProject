@@ -58,6 +58,7 @@ class FrontierNodeClient:
 
         #initing amcl move
         rospy.Subscriber('initialpose' , PoseWithCovarianceStamped , self.amcl_move)
+        rospy.Subscriber('bool_topic', Bool, self.wait_for_waypoint)
         
 
 
@@ -67,6 +68,10 @@ class FrontierNodeClient:
         #update odom NEW
         rospy.Subscriber('/odom', Odometry, self.update_odometry)
         rospy.Subscriber('bool_topic', Bool, self.wait_for_waypoint)
+        #rospy.Subscriber("/map", OccupancyGrid, self.get_map)
+
+
+        self.astar_path_pub = rospy.Publisher('/path_home', GridCells, queue_size=10)
 
         self.listener = tf.TransformListener()
 
@@ -90,6 +95,28 @@ class FrontierNodeClient:
         self.amcloy = 0
         self.amcloz = 0
         self.amclow = 0 
+
+
+    def request_map(self) -> OccupancyGrid:
+        """
+        Requests the map from the map server.
+        :return [OccupancyGrid] The grid if the service call was successful,
+                                None in case of error.
+        """
+        ### REQUIRED CREDIT
+        rospy.loginfo("Requesting the map")
+        rospy.wait_for_service('/static_map')
+
+        try:  
+            get_map = rospy.ServiceProxy('/static_map', GetMap)
+            
+            return get_map().map
+        
+
+        except rospy.ServiceException as e:
+         print("Service call failed: %s"%e)
+    
+
 
     def send_speed(self, linear_speed: float, angular_speed: float):
         """
@@ -163,18 +190,23 @@ class FrontierNodeClient:
 
         # Do a minimum number of turns and then keep turning until we are very confident about our location or we've turned for too long\
         #WANT COVARIANCE TO BE SMALL
-        while (number_of_turns < 10 and self.covariance > 0.1):
+
+        rospy.wait_for_service('global_localization')
+        rospy.ServiceProxy('global_localization', Empty)
+
+
+
+
+
+        print("")
+        print("default cov: " + str(self.covariance))
+        while (number_of_turns < 10 and self.covariance > 0.01):
             print("covariance value" + str(self.covariance))
             self.rotate(pi / 2, 0.1)
             number_of_turns += 1
             rospy.sleep(.75)
         
         # Moving the robot to the goal once localized
-        go_to_msg = PoseStamped()
-        go_to_msg.header.frame_id = "map"
-        go_to_msg.header.stamp = rospy.Time.now
-        go_to_msg.pose = msg.pose.pose
-
 
         rospy.loginfo("Localized. Driving to goal")
         go_to_msg = PoseStamped()
@@ -182,12 +214,79 @@ class FrontierNodeClient:
         go_to_msg.header.stamp = rospy.Time.now
         go_to_msg.pose = msg.pose.pose
 
+        mapdata = self.request_map()
+        
+        waypoints = self.get_astar_path(mapdata, go_to_msg)
+      
+
+        for waypoint in waypoints:
+            self.go_to_pub.publish(waypoint)
+            print("waiting")
+            rospy.wait_for_message('bool_topic', Bool)
+
+
 
         self.go_to_pub.publish(go_to_msg)
         #PathPlannerClient.path_planner_client(self, msg)
     
     #Update the covariance when receiving a message from amcl_pose
     #Covariance is the sum of the diagonal elements of the covariance matrix
+
+    def wait_for_waypoint(self, msg: Bool):
+        pass
+
+
+
+    def get_astar_path(self, mapdata: OccupancyGrid, goal: PoseStamped):
+        plan = PathPlanner
+        print("calling on server")
+
+        start = PoseStamped()
+        wp = Point()
+        wp.x = self.px
+        wp.y = self.py
+        grid_robot = self.world_to_grid(mapdata, wp)
+        
+        start.pose.position.x = grid_robot[0]
+        start.pose.position.y = grid_robot[1]
+        start.header.frame_id = "map"
+        start.header.stamp = rospy.Time.now()
+       
+        
+
+       
+        try:
+            path_planner_call = rospy.ServiceProxy('plan_path', GetPlan)
+            resp = path_planner_call(start, goal, 0)
+            #rospy.loginfo(resp.plan.poses)
+
+            # list_of_grid_cells = []
+
+            # for pose in resp.plan.poses:
+            #     list_of_grid_cells.append(self.world_to_grid(mapdata, pose.pose.position))
+
+            # for p in list_of_grid_cells:
+            #     print(p)
+
+            # self.orig_pub.publish(plan.makeDisplayMsg(plan, mapdata, list_of_grid_cells))
+
+            if not resp.plan.poses:
+                print("ERROR ERROR ERROR TRY SOMETHINGS ELSEEEEEE")
+                return None
+            else:
+                return resp.plan.poses
+
+
+            #return resp.plan.poses
+
+        except rospy.ServiceException as e:
+            print("Service call has failed: %s"%e)
+            return None
+
+
+
+
+
     def update_covariance(self, msg: PoseWithCovarianceStamped) -> None:
      
         covariance_matrix = np.reshape(msg.pose.covariance, (6,6)) # 36 long, 6 x 6 covariance matrix
