@@ -37,7 +37,7 @@
       <param name="base_frame_id" value="base_footprint"/>
   </node>
   
-</launch> 
+  </launch> 
 
 
 
