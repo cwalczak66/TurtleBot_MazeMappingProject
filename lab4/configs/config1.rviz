@@ -223,7 +223,7 @@ Visualization Manager:
       Topic: /plan_path/solution_path
       Unreliable: false
       Value: true
-    - Alpha: 1
+    - Alpha: 0.05000000074505806
       Class: rviz/GridCells
       Color: 10; 255; 20
       Enabled: true
@@ -232,7 +232,7 @@ Visualization Manager:
       Topic: grad1
       Unreliable: false
       Value: true
-    - Alpha: 0.10000000149011612
+    - Alpha: 0.05000000074505806
       Class: rviz/GridCells
       Color: 100; 225; 20
       Enabled: true
@@ -287,10 +287,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 1061.696533203125
+      Scale: 603.4337158203125
       Target Frame: map
-      X: 0.5699828863143921
-      Y: -0.3235721290111542
+      X: -0.0343933030962944
+      Y: 0.7579212784767151
     Saved: ~
 Window Geometry:
   Displays:
@@ -310,5 +310,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 2484
-  X: 575
-  Y: 54
+  X: 144
+  Y: 82

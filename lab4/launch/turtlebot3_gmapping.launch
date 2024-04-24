@@ -16,7 +16,7 @@
     <param name="srt" value="0.09"/>
     <param name="str" value="0.05"/>
     <param name="stt" value="0.32"/>
-    <param name="maxUrange" value="0.7"/>
+    <param name="maxUrange" value="0.8"/>
 
 
     <rosparam command="load" file="$(find turtlebot3_slam)/config/gmapping_params.yaml" />

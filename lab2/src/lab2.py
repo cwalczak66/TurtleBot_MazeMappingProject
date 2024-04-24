@@ -156,16 +156,17 @@ class Lab2:
         rospy.loginfo("delta x = " + str(delta_x) + " delta y = " + str(delta_y))
         
         # Rotate to look at target location
-        self.rotate(angle_to_pose, 0.4)
+        self.rotate(angle_to_pose, 0.45)
         print("rotation 1 complete!")
-        rospy.sleep(0.2)
+        rospy.sleep(0.01)
 
         # Drive to target location
-
+        
         distance_to_target = abs(sqrt(pow(delta_y, 2) + (pow(delta_x, 2))**2))
-        self.drive(distance_to_target, 0.12)
+        
+        self.drive(distance_to_target, 0.15)
         print("Reached target location!")
-        rospy.sleep(0.2)
+        rospy.sleep(0.01)
 
 
 

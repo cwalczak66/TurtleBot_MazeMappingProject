@@ -124,12 +124,12 @@ class FrontierNodeClient:
                 
 
 
-        print("LIST SORTED ITS TIME TO MOVE!")
+        #print("LIST SORTED ITS TIME TO MOVE!")
       
 
         self.move_to_frontier(mapdata, centroids)
         #LETS HOME THIS WORK
-        print("FINISHED MOVE")
+        #print("FINISHED MOVE")
         # rospy.sleep(10)
 
 
@@ -142,7 +142,7 @@ class FrontierNodeClient:
         #self.gotroid_pub.publish(plan.makeDisplayMsg(plan, mapdata, self.going_centroid))
         
             
-        print("Got the edge cells!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1111")
+        #print("Got the edge cells!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1111")
     
     def return_to_start(self):
         starting_pose = PoseStamped()
@@ -202,7 +202,7 @@ class FrontierNodeClient:
                     visited.append(e_cell)
                     queue.append(e_cell)
 
-        print("done, returning shape")
+        #print("done, returning shape")
         return shape
                     
 
@@ -257,8 +257,8 @@ class FrontierNodeClient:
 
         for edge_cell_list in list_of_edge_cell_lists:
             num_items_in_sublist = len(edge_cell_list)
-            print("number of items: " + str(num_items_in_sublist))
-            print(type(edge_cell_list))
+            #print("number of items: " + str(num_items_in_sublist))
+            #print(type(edge_cell_list))
 
             cell_coordinate_x = 0
             cell_coordinate_y = 0
@@ -274,7 +274,7 @@ class FrontierNodeClient:
         
             frontier_centroid = (int(cell_coordinate_x), int(cell_coordinate_y))
             frontier_centroid_list.append(frontier_centroid)
-            print(frontier_centroid_list)
+            #print(frontier_centroid_list)
 
         # grid_cell_msg = GridCells()
         # grid_cell_msg.header.stamp = rospy.Time.now()
@@ -299,16 +299,17 @@ class FrontierNodeClient:
         
         wp = Point()
         wp.x = self.px
-        print("CURRENT X WORLD: "+str(wp.x))
         wp.y = self.py
         grid_robot = self.world_to_grid(mapdata, wp)
-        
-        if not list_of_centroids: 
-            self.go_home
+        print(len(list_of_centroids))
+        if len(list_of_centroids) == 0: 
+            print("no centroids, go home")
+            self.go_home(mapdata)
+            return
         else:
         #loop to find closest
-            print("finding closest")
-            
+            #print("finding closest")
+            print("frontiers: " + str(list_of_centroids))
             for frontier in list_of_centroids:
                 distance = PathPlanner.euclidean_distance(grid_robot, frontier)
                 if distance < shortest_distance:
@@ -316,7 +317,7 @@ class FrontierNodeClient:
                     current_tuple = frontier
             
             check = PathPlanner
-            print("CURRENT TUPLE ========================" + str(current_tuple))
+            #print("CURRENT TUPLE ========================" + str(current_tuple))
             destination = []
             destination.append(current_tuple)
             self.dest_pub.publish(check.makeDisplayMsg(check, mapdata, destination))
@@ -328,12 +329,17 @@ class FrontierNodeClient:
             go_to_pose.pose.position.y = current_tuple[1]
             go_to_pose.header.frame_id = "map"
             go_to_pose.header.stamp = rospy.Time.now()
-            print("CHECK")
+            #print("CHECK")
 
             
             
-
-            poses = self.get_astar_path(mapdata, go_to_pose)
+            if len(list_of_centroids) == 0: 
+                print("no centroids, go home")
+                self.go_home(mapdata)
+                return
+                
+            else:
+                poses = self.get_astar_path(mapdata, go_to_pose)
 
 
 
@@ -351,8 +357,8 @@ class FrontierNodeClient:
         
         #go_to_pose.pose.orientation
         #moving to point with astar
-        print("FOUND POINT TIME TO ASTAR")
-        print(current_tuple[0], current_tuple[1])
+        # print("FOUND POINT TIME TO ASTAR")
+        # print(current_tuple[0], current_tuple[1])
     
         #suppose to move but doesnt :()
         #PathPlannerClient.path_planner_client(self, go_to_pose)
@@ -364,11 +370,24 @@ class FrontierNodeClient:
         return go_to_pose
     
     def go_home(self, mapdata: OccupancyGrid): #basically phase 2
-      
 
-        poses = self.get_astar_path(mapdata, self.home)
+        start = PoseStamped()
+        wp = Point()
+        wp.x = self.px
+        wp.y = self.py
+        grid_robot = self.world_to_grid(mapdata, wp)
+      
+        print("in go home, going from " + str(grid_robot) + " to " + str(self.home))
+        home_point = PoseStamped()
+        home_point.pose.position.x = self.home[0]
+        home_point.pose.position.y = self.home[1]
+        home_point.header.frame_id = "map"
+        home_point.header.stamp = rospy.Time.now()
+        path_home = self.get_astar_path(mapdata, home_point)
+
         
-        for waypoint in poses:
+        
+        for waypoint in path_home:
             self.go_to_pub.publish(waypoint)
             print("waiting")
             rospy.wait_for_message('bool_topic', Bool)
@@ -384,19 +403,35 @@ class FrontierNodeClient:
         #         print("i: " + str(i))
         #         poses.remove(poses[i])
         # if len(poses) >= 3:
-        if len(poses) > 5:
-            if len(poses) % 2 == 1:
-                midpoint = int(len(poses) / 2)
-                poses = poses[:(midpoint+1)]
-                print("FUCK")
-            else:
-                midpoint = int(len(poses) / 2)
-                poses = poses[:midpoint]
-                print("SHIT")
-        poses.remove(poses[0])
-        if len(poses) <= 5:
+        print("Original length of waypoints: " + str(len(poses)))
+        if len(poses) > 7:
+            # if len(poses) % 2 == 1:
+            #     midpoint = int(len(poses) / 2)
+            #     poses = poses[:(midpoint+1)]
+            #     print("New length of waypoints: " + str(len(poses)))
+            #     print("FUCK")
+            # else:
+            #     midpoint = int(len(poses) / 2)
+            #     poses = poses[:midpoint]
+            #     print("New length of waypoints: " + str(len(poses)))
+            #     print("SHIT")
+            length = len(poses)
+            length = int((3/4) * length)
             poses.remove(poses[len(poses)-1])
+            poses.remove(poses[len(poses)-2])
+            poses.remove(poses[len(poses)-3])
         
+        elif len(poses) <= 7:
+            poses.remove(poses[len(poses)-1])
+            poses.remove(poses[len(poses)-2])
+        elif len(poses) <= 3:
+           
+            print("min waypoint count")
+            
+            
+        
+        print("Final length of waypoints: " + str(len(poses)))
+        poses.remove(poses[0])
            
         
         
@@ -406,7 +441,7 @@ class FrontierNodeClient:
             self.go_to_pub.publish(waypoint)
             print("waiting")
             rospy.wait_for_message('bool_topic', Bool)
-        print("REACHED FINAL POSE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        #print("REACHED FINAL POSE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         
         
 
@@ -421,7 +456,6 @@ class FrontierNodeClient:
         start = PoseStamped()
         wp = Point()
         wp.x = self.px
-        print("CURRENT X WORLD: "+str(wp.x))
         wp.y = self.py
         grid_robot = self.world_to_grid(mapdata, wp)
         
@@ -432,6 +466,7 @@ class FrontierNodeClient:
        
         
 
+       
         try:
             path_planner_call = rospy.ServiceProxy('plan_path', GetPlan)
             resp = path_planner_call(start, goal, 0)
@@ -454,7 +489,7 @@ class FrontierNodeClient:
                 return resp.plan.poses
 
 
-            return resp.plan.poses
+            #return resp.plan.poses
 
         except rospy.ServiceException as e:
             print("Service call has failed: %s"%e)
@@ -481,10 +516,6 @@ class FrontierNodeClient:
         
 
         cell_position = (cell_coordinate_x, cell_coordinate_y)
-        print("GIVEN X: " + str(wp.x))
-        print("GIVEN WORLD ORIGIN: " + str(world_origin_x))
-        print("MAP RESOLUTION: " + str(map_resolution))
-        print("CURRENT CELL: " + str(cell_position))
         
 
         return cell_position
@@ -510,7 +541,7 @@ class FrontierNodeClient:
             self.py = location.y
             self.pth = yaw
         except (tf.LookupException, tf.ConnectivityException,   tf.ExtrapolationException):
-            print("Not working")
+            #print("Not working")
             pass
            
 
