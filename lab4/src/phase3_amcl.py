@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 from queue import Empty
-from statistics import covariance
+#from statistics import covariance
 #from lab2.src.lab2 import Lab2
 import rospy
 from nav_msgs.msg import Odometry
@@ -19,7 +19,7 @@ import tf
 from tf import TransformListener
 from std_msgs.msg import Bool
 from math import pi
-import numpy as np
+import numpy as np 
 
 
 class FrontierNodeClient:
@@ -63,7 +63,7 @@ class FrontierNodeClient:
         # self.update_rivz = rospy.Publisher('/map_updates', OccupancyGridUpdate, queue_size=10)
 
         #update odom NEW
-        rospy.Subscriber('/tf', TransformStamped, self.update_odometry)
+        rospy.Subscriber('/odom', Odometry, self.update_odometry)
         rospy.Subscriber('bool_topic', Bool, self.wait_for_waypoint)
 
         self.listener = tf.TransformListener()
@@ -560,7 +560,7 @@ class FrontierNodeClient:
 
         return cell_position
         
-    def update_odometry(self, msg):
+    def update_odometry(self, msg: Odometry):
         """
         Updates the current pose of the robot.
         This method is a callback bound to a Subscriber.

@@ -10,7 +10,7 @@
   <!--RUN roslaunch turtlebot3_slam turtlebot3_slam.launch-->
 
   <!--Map server with the map we created-->
-  <node name="map_server" pkg="map_server" type="map_server" args="$(find lab4)/maps/phase1_mapsaverTest.yaml"/>
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find lab4)/maps/maze1_map.yaml"/>
 
   <!-- AMCL -->
   <!-- <include file="$(find turtlebot3_navigation)/launch/amcl.launch"/> -->

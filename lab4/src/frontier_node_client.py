@@ -188,8 +188,8 @@ class FrontierNodeClient:
         
 
         plan = PathPlanner
-        mapdata = plan.request_map() # mapdata of amcl map from static map taken from map server
-        #mapdata = plan.request_map2()
+        #mapdata = plan.request_map() # mapdata of amcl map from static map taken from map server
+        mapdata = plan.request_map2()
         rospy.sleep(1)
         padding_cells = plan.calc_cspace2(plan, mapdata, 2)
         for pc in padding_cells:
