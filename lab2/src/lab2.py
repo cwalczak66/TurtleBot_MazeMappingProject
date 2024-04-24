@@ -2,11 +2,15 @@
 
 import rospy
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Point
 from geometry_msgs.msg import Twist, Vector3
 from tf.transformations import euler_from_quaternion
 from math import sqrt , pi, atan2, sin, cos 
 from std_msgs.msg import Bool
+import tf
+from tf import TransformListener
+from geometry_msgs.msg import Quaternion
+
 
 class Lab2:
 
@@ -40,6 +44,8 @@ class Lab2:
         # yaw angle
         self.pth = 0  
 
+        self.listener = TransformListener()
+
 #SENDS DESIRED MOTOR SPEED AS A TWIST MSG
     def send_speed(self, linear_speed: float, angular_speed: float):
         """
@@ -67,7 +73,7 @@ class Lab2:
         rospy.wait_for_message("/odom", Odometry)
         initialPose_x = self.px
         initialPose_y = self.py
-        distanceTolerance = 0.05
+        distanceTolerance = 0.04
         curr_distance = 0.0
         rate = rospy.Rate(10) # Publish rate of 10Hz
         while (not rospy.is_shutdown()) and (abs(distance - curr_distance) >= distanceTolerance):
@@ -89,7 +95,7 @@ class Lab2:
         :param angular_speed [float] [rad/s] The angular speed.
         """
         ### REQUIRED CREDIT
-        ang_tol = 0.09
+        ang_tol = 0.1
         rospy.wait_for_message("/odom", Odometry) #wait for angle update before execution
         rate = rospy.Rate(10) # Publish rate of 10Hz
 
@@ -152,20 +158,20 @@ class Lab2:
         # Rotate to look at target location
         self.rotate(angle_to_pose, 0.4)
         print("rotation 1 complete!")
-        rospy.sleep(1)
+        rospy.sleep(0.2)
 
         # Drive to target location
 
         distance_to_target = abs(sqrt(pow(delta_y, 2) + (pow(delta_x, 2))**2))
         self.drive(distance_to_target, 0.12)
         print("Reached target location!")
-        rospy.sleep(0.7)
+        rospy.sleep(0.2)
 
 
 
         # Rotate to target orientation
-        self.rotate(yaw, 0.4)
-        print("Reached target pose!")
+        # self.rotate(yaw, 0.4)
+        # print("Reached target pose!")
 
 
 
@@ -194,6 +200,20 @@ class Lab2:
         quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
         (roll, pitch, yaw) = euler_from_quaternion(quat_list)
         self.pth = yaw
+        
+        
+
+        try:
+            position, quaternion = self.listener.lookupTransform("/map",  "/base_footprint", rospy.Time())
+            location =Point(x=position[0], y=position[1])
+            orientation = Quaternion(x=quaternion[0], y=quaternion[1], z=quaternion[2], w=quaternion[3])
+            (roll, pitch, yaw) = euler_from_quaternion([orientation.x, orientation.y, orientation.z, orientation.w])
+            self.px = location.x
+            self.py = location.y
+            self.pth = yaw
+        except (tf.LookupException, tf.ConnectivityException,   tf.ExtrapolationException):
+            print("Not working")
+            pass
 
 # TO BE IMPLEMENTED
     def smooth_drive(self, distance: float, linear_speed: float):

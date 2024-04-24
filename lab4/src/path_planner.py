@@ -12,6 +12,9 @@ from math import sqrt
 from priority_queue import PriorityQueue
 from visualization_msgs.msg import Marker, MarkerArray
 import copy
+import tf
+from tf import TransformListener
+from geometry_msgs.msg import Quaternion
 #from lab4.srv import Cspace, CspaceResponse
 
 
@@ -50,6 +53,11 @@ class PathPlanner:
         self.path_solution = rospy.Publisher('/plan_path/solution_path', Path, queue_size=10)
         rospy.Subscriber('/map', OccupancyGrid, self.request_custom)
 
+        self.cspace1_pub = rospy.Publisher('grad1', GridCells, queue_size=10)
+        self.cspace2_pub = rospy.Publisher('grad2', GridCells, queue_size=10)
+        self.cspace3_pub = rospy.Publisher('grad3', GridCells, queue_size=10)
+        self.cspace4_pub = rospy.Publisher('grad4', GridCells, queue_size=10)
+
         #Subscribing to cmd_vel topic to recieve messages about the goal 
     #    self.goal_sub = rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.plan_path_handler)
 
@@ -58,6 +66,7 @@ class PathPlanner:
         self.cspace1 = []
         self.cspace2 = []
         self.cspace3 = []
+        self.cspace4 = []
         
         ## Initialize the request counter
         self.request_counter = 0
@@ -584,7 +593,13 @@ class PathPlanner:
         final_cost = sqrt(pow(ax - bx, 2) + pow(ay - by, 2)) #Euclidean distance
 
         if b in self.cspace1:
-            final_cost = final_cost + 2
+            final_cost = final_cost + 90
+        if b in self.cspace2:
+            final_cost = final_cost + 80
+        if b in self.cspace3:
+            final_cost = final_cost + 20
+        # if b in self.cspace4:
+        #     final_cost = final_cost + 10
         
       
         return final_cost
@@ -773,7 +788,14 @@ class PathPlanner:
         print(mapdata.info.height)
         print(mapdata.info.width)
 
-        self.cspace1 = self.calc_cspace2(mapdata, 4)
+        self.cspace1 = self.calc_cspace2(mapdata, 3)
+        self.cspace1_pub.publish(self.makeDisplayMsg(mapdata, self.cspace1))
+        self.cspace2 = self.calc_cspace2(mapdata, 4)
+        self.cspace2_pub.publish(self.makeDisplayMsg(mapdata, self.cspace2))
+        self.cspace3 = self.calc_cspace2(mapdata, 5)
+        self.cspace3_pub.publish(self.makeDisplayMsg(mapdata, self.cspace3))
+        # self.cspace4 = self.calc_cspace2(mapdata, 6)
+        # self.cspace4_pub.publish(self.makeDisplayMsg(mapdata, self.cspace4))
 
         cspacedata = self.calc_cspace(mapdata, 1)
         ## Execute A*

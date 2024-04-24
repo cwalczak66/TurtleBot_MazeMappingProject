@@ -15,6 +15,7 @@ from tf.transformations import euler_from_quaternion
 import tf
 from tf import TransformListener
 from std_msgs.msg import Bool
+from geometry_msgs.msg import Quaternion
 
 class FrontierNodeClient:
 
@@ -49,15 +50,20 @@ class FrontierNodeClient:
         self.px = 0
         self.py = 0 
         self.kp = 0.1
+        self.listener = TransformListener()
 
         self.start_pose = PoseStamped()
         # yaw angle
         self.pth = 0  
-        self.first_bool = True
         self.starting_position = (0, 0)
  
         #self.going_partway = 0
         self.going_centroid = []
+
+        self.home = (0,0)
+        self.got_home = True
+
+        
 
 
 
@@ -68,6 +74,13 @@ class FrontierNodeClient:
         #requestion map from gmapping
         print("in the handler")
         rospy.sleep(1)
+
+        if self.got_home:
+            wp = Point()
+            wp.x = self.px
+            wp.y = self.py
+            self.home = self.world_to_grid(mapdata, wp)
+            self.got_home = False
        
 
         
@@ -290,36 +303,37 @@ class FrontierNodeClient:
         wp.y = self.py
         grid_robot = self.world_to_grid(mapdata, wp)
         
-        
-        
+        if not list_of_centroids: 
+            self.go_home
+        else:
         #loop to find closest
-        print("finding closest")
-        
-        for frontier in list_of_centroids:
-            distance = PathPlanner.euclidean_distance(grid_robot, frontier)
-            if distance < shortest_distance:
-                shortest_distance = distance
-                current_tuple = frontier
-        
-        check = PathPlanner
-        print("CURRENT TUPLE ========================" + str(current_tuple))
-        destination = []
-        destination.append(current_tuple)
-        self.dest_pub.publish(check.makeDisplayMsg(check, mapdata, destination))
+            print("finding closest")
+            
+            for frontier in list_of_centroids:
+                distance = PathPlanner.euclidean_distance(grid_robot, frontier)
+                if distance < shortest_distance:
+                    shortest_distance = distance
+                    current_tuple = frontier
+            
+            check = PathPlanner
+            print("CURRENT TUPLE ========================" + str(current_tuple))
+            destination = []
+            destination.append(current_tuple)
+            self.dest_pub.publish(check.makeDisplayMsg(check, mapdata, destination))
 
-        
+            
 
-        go_to_pose = PoseStamped()
-        go_to_pose.pose.position.x = current_tuple[0]
-        go_to_pose.pose.position.y = current_tuple[1]
-        go_to_pose.header.frame_id = "map"
-        go_to_pose.header.stamp = rospy.Time.now()
-        print("CHECK")
+            go_to_pose = PoseStamped()
+            go_to_pose.pose.position.x = current_tuple[0]
+            go_to_pose.pose.position.y = current_tuple[1]
+            go_to_pose.header.frame_id = "map"
+            go_to_pose.header.stamp = rospy.Time.now()
+            print("CHECK")
 
-        
-        
+            
+            
 
-        poses = self.get_astar_path(mapdata, go_to_pose)
+            poses = self.get_astar_path(mapdata, go_to_pose)
 
 
 
@@ -349,6 +363,19 @@ class FrontierNodeClient:
         #return what point robot is going
         return go_to_pose
     
+    def go_home(self, mapdata: OccupancyGrid): #basically phase 2
+      
+
+        poses = self.get_astar_path(mapdata, self.home)
+        
+        for waypoint in poses:
+            self.go_to_pub.publish(waypoint)
+            print("waiting")
+            rospy.wait_for_message('bool_topic', Bool)
+            print("REACHED HOME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        
+
+
     def go_to_frontier(self, mapdata: OccupancyGrid, poses):
 
         # for i in range(len(poses)):
@@ -356,18 +383,28 @@ class FrontierNodeClient:
         #     if i > int(len(poses)/2):
         #         print("i: " + str(i))
         #         poses.remove(poses[i])
-        if len(poses) >= 3:
-
-            midpoint = len(poses) // 2
-            poses = poses[:midpoint]
-        elif len(poses) == 2:
+        # if len(poses) >= 3:
+        if len(poses) > 5:
+            if len(poses) % 2 == 1:
+                midpoint = int(len(poses) / 2)
+                poses = poses[:(midpoint+1)]
+                print("FUCK")
+            else:
+                midpoint = int(len(poses) / 2)
+                poses = poses[:midpoint]
+                print("SHIT")
+        poses.remove(poses[0])
+        if len(poses) <= 5:
             poses.remove(poses[len(poses)-1])
-            
+        
+           
+        
+        
 
 
         for waypoint in poses:
             self.go_to_pub.publish(waypoint)
-            print("waitig")
+            print("waiting")
             rospy.wait_for_message('bool_topic', Bool)
         print("REACHED FINAL POSE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         
@@ -461,6 +498,23 @@ class FrontierNodeClient:
         quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
         (roll, pitch, yaw) = euler_from_quaternion(quat_list)
         self.pth = yaw
+
+        
+
+        try:
+            position, quaternion = self.listener.lookupTransform("/map",  "/base_link", rospy.Time())
+            location =Point(x=position[0], y=position[1])
+            orientation = Quaternion(x=quaternion[0], y=quaternion[1], z=quaternion[2], w=quaternion[3])
+            (roll, pitch, yaw) = euler_from_quaternion([orientation.x, orientation.y, orientation.z, orientation.w])
+            self.px = location.x
+            self.py = location.y
+            self.pth = yaw
+        except (tf.LookupException, tf.ConnectivityException,   tf.ExtrapolationException):
+            print("Not working")
+            pass
+           
+
+        
 
         
         #NEED TO UPDATE THE START
