@@ -39,6 +39,8 @@ class PathPlannerClient:
         self.pth = 0  
 
 
+    
+
 
 # CALLS UP THE PATH PLANNER SERVER TO GET THE SHORTEST PATH TO GET TO THE GOAL
     def path_planner_client(self, msg: PoseStamped): 

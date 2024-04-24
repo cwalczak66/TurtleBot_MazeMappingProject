@@ -37,13 +37,13 @@ class PathPlannerClient:
         
         # yaw angle
         self.pth = 0  
-
+        rospy.wait_for_service('plan_path')
 
 
 
     def path_planner_client(self, msg: PoseStamped): 
     
-        rospy.wait_for_service('plan_path')
+        print("in path planner client")
         start = self.start_pose
         rospy.loginfo(msg)
         goal = PoseStamped()
@@ -53,10 +53,10 @@ class PathPlannerClient:
         try:
             path_planner_call = rospy.ServiceProxy('plan_path', GetPlan)
             resp = path_planner_call(start, goal, 0)
-            #rospy.loginfo(resp.plan.poses)
+            rospy.loginfo(resp.plan.poses)
             step = 1
             for waypoint in resp.plan.poses:
-
+                #print(resp.plan.poses)
                 
                 print("STEP "+ str(step))
                 print("")
@@ -86,7 +86,7 @@ class PathPlannerClient:
 
         #print("x: " + str(self.px) + "y: " + str(self.py) + "yaw: " + str(self.pth))
 
-
+        
 
 
         # pose_stamped_msg = PoseStamped()

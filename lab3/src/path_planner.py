@@ -30,6 +30,8 @@ class PathPlanner:
         ## Create a new service called "plan_path" that accepts messages of
         ## type GetPlan and calls self.plan_path() when a message is received
         self.path_plan_service = rospy.Service('plan_path', GetPlan, self.plan_path_handler)
+        self.path_plan_service = rospy.Service('calc_cspace', GetPlan, self.calc_cspace)
+        self.path_plan_service = rospy.Service('nei', GetPlan, self.calc_cspace)
 
         ## Create a publisher for the C-space (the enlarged occupancy grid)
         ## The topic is "/path_planner/cspace", the message type is GridCells
@@ -602,7 +604,7 @@ class PathPlanner:
 
 
 
-# MAIN SERVICE CALL FROM CLIENT SERVER
+# 
     def plan_path_handler(self, msg:PoseStamped):
         """
         Plans a path between the start and goal locations in the requested.

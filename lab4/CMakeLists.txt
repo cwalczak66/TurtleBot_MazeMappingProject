@@ -6,7 +6,11 @@ project(lab4)
 
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS
+  roscpp
   rospy
+  std_msgs
+  message_generation
+  nav_msgs
 )
 
 find_package(catkin REQUIRED
@@ -26,12 +30,32 @@ find_package(catkin REQUIRED
 ## catkin specific configuration ##
 ###################################
 
+
+add_service_files(
+  FILES
+  Cspace.srv
+)
+
+generate_messages(
+   DEPENDENCIES
+   std_msgs
+   nav_msgs
+)
+
+
+
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES RBE3002_template
    CATKIN_DEPENDS rospy turtlebot3_bringup turtlebot3_description
 #  DEPENDS system_lib
 )
+
+
+
+
+
+
 
 ###########
 ## Build ##
@@ -41,3 +65,5 @@ include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
 )
+
+
