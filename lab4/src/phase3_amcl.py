@@ -8,7 +8,7 @@ from attr import s
 import rospy
 from nav_msgs.msg import Odometry
 from nav_msgs.srv import GetPlan, GetMap
-from geometry_msgs.msg import PoseStamped, Point, PoseWithCovarianceStamped, TransformStamped, Twist, Vector3
+from geometry_msgs.msg import PoseStamped, Point, PoseWithCovarianceStamped, TransformStamped, Twist, Vector3, PointStamped
 from nav_msgs.msg import GridCells, OccupancyGrid, Path
 from map_msgs.msg import OccupancyGridUpdate
 from path_planner import PathPlanner
@@ -59,9 +59,14 @@ class FrontierNodeClient:
 
 
         #initing amcl move
-        rospy.Subscriber('initialpose' , PoseWithCovarianceStamped , self.amcl_move)
+        rospy.Subscriber('clicked_point' , PointStamped , self.amcl_localize)
+
         rospy.Subscriber('bool_topic', Bool, self.wait_for_waypoint)
-        rospy.Subscriber('final_goal', PoseStamped, self.drive_home)
+
+
+        rospy.Subscriber('initalpose' , PoseWithCovarianceStamped, self.drive_home)
+
+        #rospy.Subscriber('final_goal', PoseStamped, self.drive_home)
         
 
 
@@ -188,7 +193,7 @@ class FrontierNodeClient:
         
     #     return localization_request
     
-    def amcl_move(self, msg:PoseWithCovarianceStamped):
+    def amcl_localize(self, msg:PointStamped):
 
         number_of_turns = 0 # Start at 0 turns done
         #("rosservice call /global_localization") # Scatter a bunch of potential robot positions around the map for amcl to sort through
@@ -199,10 +204,6 @@ class FrontierNodeClient:
         rospy.wait_for_service('global_localization')
         loc = rospy.ServiceProxy('global_localization', ros_empty)
         loc()
-
-
-
-
         print("")
         print("default cov: " + str(self.covariance))
         while (number_of_turns < 10):
@@ -213,7 +214,6 @@ class FrontierNodeClient:
             rospy.sleep(.75)
         
         # Moving the robot to the goal once localized
-
         rospy.loginfo("Localized. Waiting for destination")
         #rospy.wait_for_message('final_goal', PoseStamped)
         # rospy.wait_for_message(PoseStamped)
@@ -243,15 +243,19 @@ class FrontierNodeClient:
     def wait_for_waypoint(self, msg: Bool):
         pass
 
-    def drive_home(self, msg: PoseStamped):
+    def drive_home(self, msg: PoseWithCovarianceStamped):
         
         print("in drive")
+        print(self.px)
+        print(self.py)
 
-        rospy.wait_for_message(PoseStamped)
+
+        #rospy.wait_for_message(PoseStamped)
+
         end = PoseStamped()
         end.header.frame_id = "map"
         end.header.stamp = rospy.Time.now()
-        end.pose = msg.pose.pose
+        end.pose = msg.pose
 
         mapdata = self.request_map()
         
