@@ -22,6 +22,8 @@ from tf import TransformListener
 from std_msgs.msg import Bool
 from math import pi
 import numpy as np 
+from std_srvs.srv import Empty as ros_empty
+from geometry_msgs.msg import Quaternion
 
 
 class FrontierNodeClient:
@@ -59,6 +61,7 @@ class FrontierNodeClient:
         #initing amcl move
         rospy.Subscriber('initialpose' , PoseWithCovarianceStamped , self.amcl_move)
         rospy.Subscriber('bool_topic', Bool, self.wait_for_waypoint)
+        rospy.Subscriber('final_goal', PoseStamped, self.drive_home)
         
 
 
@@ -95,6 +98,8 @@ class FrontierNodeClient:
         self.amcloy = 0
         self.amcloz = 0
         self.amclow = 0 
+
+       
 
 
     def request_map(self) -> OccupancyGrid:
@@ -192,41 +197,44 @@ class FrontierNodeClient:
         #WANT COVARIANCE TO BE SMALL
 
         rospy.wait_for_service('global_localization')
-        rospy.ServiceProxy('global_localization', Empty)
-
+        loc = rospy.ServiceProxy('global_localization', ros_empty)
+        loc()
 
 
 
 
         print("")
         print("default cov: " + str(self.covariance))
-        while (number_of_turns < 10 and self.covariance > 0.01):
+        while (number_of_turns < 10):
+
             print("covariance value" + str(self.covariance))
-            self.rotate(pi / 2, 0.1)
+            self.rotate(pi/2, 0.1)
             number_of_turns += 1
             rospy.sleep(.75)
         
         # Moving the robot to the goal once localized
 
-        rospy.loginfo("Localized. Driving to goal")
-        go_to_msg = PoseStamped()
-        go_to_msg.header.frame_id = "map"
-        go_to_msg.header.stamp = rospy.Time.now
-        go_to_msg.pose = msg.pose.pose
+        rospy.loginfo("Localized. Waiting for destination")
+        #rospy.wait_for_message('final_goal', PoseStamped)
+        # rospy.wait_for_message(PoseStamped)
+        # go_to_msg = PoseStamped()
+        # go_to_msg.header.frame_id = "map"
+        # go_to_msg.header.stamp = rospy.Time.now()
+        # go_to_msg.pose = msg.pose.pose
 
-        mapdata = self.request_map()
+        # mapdata = self.request_map()
         
-        waypoints = self.get_astar_path(mapdata, go_to_msg)
+        # waypoints = self.get_astar_path(mapdata, go_to_msg)
       
 
-        for waypoint in waypoints:
-            self.go_to_pub.publish(waypoint)
-            print("waiting")
-            rospy.wait_for_message('bool_topic', Bool)
+        # for waypoint in waypoints:
+        #     self.go_to_pub.publish(waypoint)
+        #     print("waiting")
+        #     rospy.wait_for_message('bool_topic', Bool)
 
 
 
-        self.go_to_pub.publish(go_to_msg)
+        # self.go_to_pub.publish(go_to_msg)
         #PathPlannerClient.path_planner_client(self, msg)
     
     #Update the covariance when receiving a message from amcl_pose
@@ -235,7 +243,29 @@ class FrontierNodeClient:
     def wait_for_waypoint(self, msg: Bool):
         pass
 
+    def drive_home(self, msg: PoseStamped):
+        
+        print("in drive")
 
+        rospy.wait_for_message(PoseStamped)
+        end = PoseStamped()
+        end.header.frame_id = "map"
+        end.header.stamp = rospy.Time.now()
+        end.pose = msg.pose.pose
+
+        mapdata = self.request_map()
+        
+        waypoints = self.get_astar_path(mapdata, end)
+      
+
+        for waypoint in waypoints:
+            self.go_to_pub.publish(waypoint)
+            print("waiting")
+            rospy.wait_for_message('bool_topic', Bool)
+
+        print("DONE WITH EVERYTHINGS")
+
+        
 
     def get_astar_path(self, mapdata: OccupancyGrid, goal: PoseStamped):
         plan = PathPlanner
@@ -256,22 +286,12 @@ class FrontierNodeClient:
 
        
         try:
-            path_planner_call = rospy.ServiceProxy('plan_path', GetPlan)
-            resp = path_planner_call(start, goal, 0)
-            #rospy.loginfo(resp.plan.poses)
+            amcl_path = rospy.ServiceProxy('amcl_srv', GetPlan)
+            resp = amcl_path(start, goal, 0)
 
-            # list_of_grid_cells = []
-
-            # for pose in resp.plan.poses:
-            #     list_of_grid_cells.append(self.world_to_grid(mapdata, pose.pose.position))
-
-            # for p in list_of_grid_cells:
-            #     print(p)
-
-            # self.orig_pub.publish(plan.makeDisplayMsg(plan, mapdata, list_of_grid_cells))
 
             if not resp.plan.poses:
-                print("ERROR ERROR ERROR TRY SOMETHINGS ELSEEEEEE")
+              
                 return None
             else:
                 return resp.plan.poses
@@ -318,7 +338,7 @@ class FrontierNodeClient:
         
 
         try:
-            path_planner_call = rospy.ServiceProxy('plan_path', GetPlan)
+            path_planner_call = rospy.ServiceProxy('amcl_srv', GetPlan)
             resp = path_planner_call(start, goal, 0)
             #rospy.loginfo(resp.plan.poses)
 
@@ -375,24 +395,27 @@ class FrontierNodeClient:
         return cell_position
         
     def update_odometry(self, msg: Odometry):
-        """
-        Updates the current pose of the robot.
-        This method is a callback bound to a Subscriber.
-        :param msg [Odometry] The current odometry information.
-        """
-
-        trans = [0,0]
-        rot = [0,0,0,0]
-        try:
-            (trans,rot) = self.listener.lookupTransform('/map','/base_footprint',rospy.Time(0)) 
-        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
-            print("HEY I DIDN'T WORK")
-        self.px = trans[0]
-        self.py = trans[1]
-
-        quat_list = [rot[0], rot[1], rot[2], rot[3]]
+       
+        self.px = msg.pose.pose.position.x 
+        self.py = msg.pose.pose.position.y 
+        quat_orig = msg.pose.pose.orientation
+        quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
         (roll, pitch, yaw) = euler_from_quaternion(quat_list)
         self.pth = yaw
+
+        
+
+        try:
+            position, quaternion = self.listener.lookupTransform("/map",  "/base_link", rospy.Time())
+            location =Point(x=position[0], y=position[1])
+            orientation = Quaternion(x=quaternion[0], y=quaternion[1], z=quaternion[2], w=quaternion[3])
+            (roll, pitch, yaw) = euler_from_quaternion([orientation.x, orientation.y, orientation.z, orientation.w])
+            self.px = location.x
+            self.py = location.y
+            self.pth = yaw
+        except (tf.LookupException, tf.ConnectivityException,   tf.ExtrapolationException):
+            #print("Not working")
+            pass
 
 
     def run(self):

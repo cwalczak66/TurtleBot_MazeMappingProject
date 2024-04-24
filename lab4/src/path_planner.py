@@ -33,7 +33,9 @@ class PathPlanner:
         rospy.init_node("path_planner")
         ## Create a new service called "plan_path" that accepts messages of
         ## type GetPlan and calls self.plan_path() when a message is received
+        self.amcl_service = rospy.Service('amcl_srv', GetPlan, self.amcl_handler)
         self.path_plan_service = rospy.Service('plan_path', GetPlan, self.plan_path_handler)
+        
         
 
         ## Create a publisher for the C-space (the enlarged occupancy grid)
@@ -418,7 +420,7 @@ class PathPlanner:
 
         try:  
             get_map = rospy.ServiceProxy('/static_map', GetMap)
-            
+            print("map recived")
             return get_map().map
         
 
@@ -773,8 +775,67 @@ class PathPlanner:
         ## Request the map
         ## In case of error, return an empty path
         #rospy.wait_for_service('map_service')
-        print("In Plan_path!")
+        print("In Plan_path! why????")
         mapdata = PathPlanner.request_map2()
+
+        
+            
+        #mapdata = self.current_map
+        #PathPlanner.request_custom(self, mapdata)
+        #print(mapdata)
+        if mapdata is None:
+            return Path()
+        ## Calculate the C-space and publish it
+        self.current_map = mapdata
+        print(mapdata.info.resolution)
+        print(mapdata.info.height)
+        print(mapdata.info.width)
+
+        self.cspace1 = self.calc_cspace2(mapdata, 3)
+        self.cspace1_pub.publish(self.makeDisplayMsg(mapdata, self.cspace1))
+        self.cspace2 = self.calc_cspace2(mapdata, 4)
+        self.cspace2_pub.publish(self.makeDisplayMsg(mapdata, self.cspace2))
+        self.cspace3 = self.calc_cspace2(mapdata, 5)
+        self.cspace3_pub.publish(self.makeDisplayMsg(mapdata, self.cspace3))
+        # self.cspace4 = self.calc_cspace2(mapdata, 6)
+        # self.cspace4_pub.publish(self.makeDisplayMsg(mapdata, self.cspace4))
+
+        cspacedata = self.calc_cspace(mapdata, 1)
+        ## Execute A*
+
+        
+
+    #    start = PathPlanner.world_to_grid(mapdata, msg.start.pose.position)
+    #    goal  = PathPlanner.world_to_grid(mapdata, msg.goal.pose.position)
+    #    path  = self.a_star(mapdata, start, goal)
+        print("plan path handler a*")
+        start = PathPlanner.world_to_grid(cspacedata, msg.start.pose.position)
+        goal  = PathPlanner.world_to_grid(cspacedata, msg.goal.pose.position)
+        
+        print(start)
+        print(goal)
+        path  = self.a_star(cspacedata, start, goal)
+        ## Return a Path message
+        
+
+
+        ## Optimize waypoints
+        waypoints = PathPlanner.optimize_path(path)
+      
+        ## Return a Path message
+        self.path_solution.publish(self.path_to_message(cspacedata, waypoints)) 
+        #print("waypoints:" + waypoints)
+        
+        return self.path_to_message(cspacedata, waypoints)
+    
+
+    def amcl_handler(self, msg:PoseStamped):
+  
+        ## Request the map
+        ## In case of error, return an empty path
+        #rospy.wait_for_service('map_service')
+        print("In amcl planner!")
+        mapdata = PathPlanner.request_map()
 
         
             

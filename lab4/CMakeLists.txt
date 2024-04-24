@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
   nav_msgs
+  std_srvs
 )
 
 find_package(catkin REQUIRED

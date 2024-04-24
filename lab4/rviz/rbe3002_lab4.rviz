@@ -6,8 +6,11 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /Grid1
         - /GridCells1
         - /Map1
+        - /PoseWithCovariance1
+        - /PoseArray1
       Splitter Ratio: 0.6029411554336548
     Tree Height: 517
   - Class: rviz/Selection
@@ -36,7 +39,7 @@ Visualization Manager:
   Class: ""
   Displays:
     - Alpha: 0.5
-      Cell Size: 1
+      Cell Size: 0.02500000037252903
       Class: rviz/Grid
       Color: 160; 160; 164
       Enabled: true
@@ -50,7 +53,7 @@ Visualization Manager:
         Y: 0
         Z: 0
       Plane: XY
-      Plane Cell Count: 10
+      Plane Cell Count: 400
       Reference Frame: <Fixed Frame>
       Value: true
     - Alpha: 1
@@ -157,6 +160,8 @@ Visualization Manager:
         Map: true
         Odometry: true
         Path: true
+        PoseArray: true
+        PoseWithCovariance: true
         RobotModel: true
         Value: true
       Zoom Factor: 1
@@ -256,6 +261,54 @@ Visualization Manager:
       Unreliable: false
       Use Timestamp: false
       Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/PoseWithCovariance
+      Color: 255; 25; 0
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: true
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: PoseWithCovariance
+      Queue Size: 10
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
+      Topic: /amcl_pose
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Arrow Length: 0.30000001192092896
+      Axes Length: 0.30000001192092896
+      Axes Radius: 0.009999999776482582
+      Class: rviz/PoseArray
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.07000000029802322
+      Head Radius: 0.029999999329447746
+      Name: PoseArray
+      Queue Size: 10
+      Shaft Length: 0.23000000417232513
+      Shaft Radius: 0.009999999776482582
+      Shape: Arrow (Flat)
+      Topic: /particlecloud
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -293,10 +346,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 396.1611022949219
+      Scale: 878.4434814453125
       Target Frame: <Fixed Frame>
-      X: 0.006560987792909145
-      Y: 0.07163210958242416
+      X: 0.15466468036174774
+      Y: -0.05559954419732094
     Saved: ~
 Window Geometry:
   Camera:
