@@ -174,10 +174,6 @@ class FrontierNodeClient:
         go_to_msg.pose = msg.pose.pose
 
 
-
-
-
-
         self.go_to_pub.publish(go_to_msg)
         #PathPlannerClient.path_planner_client(self, msg)
     

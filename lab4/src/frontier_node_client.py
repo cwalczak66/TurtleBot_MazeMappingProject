@@ -137,33 +137,7 @@ class FrontierNodeClient:
         
     #     return localization_request
     
-    def amcl_move(self, msg:PoseStamped):
 
-        number_of_turns = 0 # Start at 0 turns done
-        #("rosservice call /global_localization") # Scatter a bunch of potential robot positions around the map for amcl to sort through
-
-        # Do a minimum number of turns and then keep turning until we are very confident about our location or we've turned for too long
-        while (number_of_turns < 5 or self.covariance > 0.1) and number_of_turns < 10:
-            self.rotate(pi / 2, 0.1)
-            number_of_turns += 1
-            rospy.sleep(.75)
-        
-        # Moving the robot to the goal once localized
-        rospy.loginfo("Localized. Driving to goal")
-        self.go_to_pub.publish(msg)
-        #PathPlannerClient.path_planner_client(self, msg)
-    
-    #Update the covariance when receiving a message from amcl_pose
-    #Covariance is the sum of the diagonal elements of the covariance matrix
-    def update_covariance(self, msg: PoseWithCovarianceStamped) -> None:
-     
-        covariance_matrix = np.reshape(msg.pose.covariance, (6,6)) # 36 long, 6 x 6 covariance matrix
-        self.covariance = np.sum(np.diag(covariance_matrix)) # Get sum of diagonal elements of covariance matrix
-        
-        self.amclx = msg.pose.pose.position.x
-        self.amcly = msg.pose.pose.position.y
-        self.amcl_theta = msg.pose.pose.orientation.w
-        
 
         
 
@@ -533,12 +507,11 @@ class FrontierNodeClient:
             
             
         
-        print("Final length of waypoints: " + str(len(poses)))
+        
         poses.remove(poses[0])
            
         
         
-
 
         for waypoint in poses:
             self.go_to_pub.publish(waypoint)

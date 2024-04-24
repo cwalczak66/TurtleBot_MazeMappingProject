@@ -78,6 +78,7 @@ class Lab2:
         rate = rospy.Rate(10) # Publish rate of 10Hz
         while (not rospy.is_shutdown()) and (abs(distance - curr_distance) >= distanceTolerance):
         # Euclidean distance difference - "error"
+        
             self.send_speed(linear_speed, 0.0)
             rate.sleep()
             curr_distance = abs(sqrt(pow(self.py - initialPose_y, 2 ) + (pow(self.px - initialPose_x, 2))**2))
@@ -156,7 +157,7 @@ class Lab2:
         rospy.loginfo("delta x = " + str(delta_x) + " delta y = " + str(delta_y))
         
         # Rotate to look at target location
-        self.rotate(angle_to_pose, 0.45)
+        self.rotate(angle_to_pose, 0.5)
         print("rotation 1 complete!")
         rospy.sleep(0.01)
 
@@ -164,7 +165,7 @@ class Lab2:
         
         distance_to_target = abs(sqrt(pow(delta_y, 2) + (pow(delta_x, 2))**2))
         
-        self.drive(distance_to_target, 0.15)
+        self.drive(distance_to_target, 0.13)
         print("Reached target location!")
         rospy.sleep(0.01)
 
