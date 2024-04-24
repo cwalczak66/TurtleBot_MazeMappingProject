@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+from queue import Empty
+#from lab2.src.lab2 import Lab2
 import rospy
 from nav_msgs.msg import Odometry
 from nav_msgs.srv import GetPlan, GetMap
-from geometry_msgs.msg import PoseStamped, Point
+from geometry_msgs.msg import PoseStamped, Point, PoseWithCovarianceStamped, Twist
 from nav_msgs.msg import GridCells, OccupancyGrid, Path
 from map_msgs.msg import OccupancyGridUpdate
 from path_planner import PathPlanner
@@ -16,6 +18,8 @@ import tf
 from tf import TransformListener
 from std_msgs.msg import Bool
 from geometry_msgs.msg import Quaternion
+from math import pi
+import numpy as np
 
 class FrontierNodeClient:
 
@@ -40,6 +44,16 @@ class FrontierNodeClient:
         #gets map from gmapping node
         #rospy.Subscriber('/map', OccupancyGrid, self.update_map)
 
+        #subscriber for amcl
+        rospy.Subscriber('amcl_pose', PoseWithCovarianceStamped , self.update_covariance)
+        
+        #WHEN THE AMCL WORKS WE GIVE IT ANOTHER NAV GOAL AFTER LOCALIZATION
+        rospy.Subscriber('move_base_simple/goal', PoseStamped, self.amcl_move)
+
+
+
+
+
         #update map in rviz
         self.update_rivz = rospy.Publisher('/map_updates', OccupancyGridUpdate, queue_size=10)
         #update odom
@@ -59,15 +73,101 @@ class FrontierNodeClient:
  
         #self.going_partway = 0
         self.going_centroid = []
+        self.amclx = 0
+        self.amcly = 0
+        self.amcl_theta = 0
+        self.amclcovariance = 0
+        self.amclox = 0
+        self.amcloy = 0
+        self.amcloz = 0
+        self.amclow = 0 
 
-        self.home = (0,0)
+
+    def rotate(self, angle: float, aspeed: float):
+        """
+        Rotates the robot around the body center by the given angle.
+        :param angle         [float] [rad]   The distance to cover.
+        :param angular_speed [float] [rad/s] The angular speed.
+        """
+        ### REQUIRED CREDIT
+        ang_tol = 0.09
+        rospy.wait_for_message("/odom", Odometry) #wait for angle update before execution
+        rate = rospy.Rate(10) # Publish rate of 10Hz
+
+        while not rospy.is_shutdown():
+            angle_difference = (angle - self.pth)% (2* pi)
+            print(f'target angle: {angle * (180/pi)} current angle: {self.pth * (180/pi)} angle difference: {angle_difference * (180/pi)}')
+            # Normalizing angle difference to range btw pi and -pi
+            #angle_difference = atan2(sin(angle_difference), cos(angle_difference))
+            #print(angle_difference)
+            while angle_difference > pi:
+                angle_difference = angle_difference - 2 * pi
+            while angle_difference < -pi:
+                angle_difference = angle_difference + 2*pi
+            rate.sleep()
+            
+            if abs(angle_difference) <= ang_tol:
+                self.send_speed(0.0,0.0)
+                rospy.sleep(0.5)
+                self.send_speed(0,0)
+                print("reached goal!")
+                break
+            else:
+                # Normalizing angle difference to range btw pi and -pi
+                if angle_difference > 0:    
+                    self.send_speed(0, aspeed) #clockwise
+                else:
+                    self.send_speed(0, -aspeed) #anticlockwise
+                rospy.sleep(0.5)
+        
+        self.send_speed(0,0)
+        print("robot should stop now")
+        self.send_speed(0.0,0.0)
+    
+    #Turns the robot once AMCL is running to localize the bot in the map
+    #Poststamped msg is the goal pose provided in rviz
+    
+    
+    # def localization(self):
+    #     rospy.loginfo("Requesting localization from AMCL")
+    #     localization_request = rospy.ServiceProxy('/global_localization', Empty)
+        
+    #     return localization_request
+    
+    def amcl_move(self, msg:PoseStamped):
+
+        number_of_turns = 0 # Start at 0 turns done
+        #("rosservice call /global_localization") # Scatter a bunch of potential robot positions around the map for amcl to sort through
+
+        # Do a minimum number of turns and then keep turning until we are very confident about our location or we've turned for too long
+        while (number_of_turns < 5 or self.covariance > 0.1) and number_of_turns < 10:
+            self.rotate(pi / 2, 0.1)
+            number_of_turns += 1
+            rospy.sleep(.75)
+        
+        # Moving the robot to the goal once localized
+        rospy.loginfo("Localized. Driving to goal")
+        self.go_to_pub.publish(msg)
+        #PathPlannerClient.path_planner_client(self, msg)
+    
+    #Update the covariance when receiving a message from amcl_pose
+    #Covariance is the sum of the diagonal elements of the covariance matrix
+    def update_covariance(self, msg: PoseWithCovarianceStamped) -> None:
+     
+        covariance_matrix = np.reshape(msg.pose.covariance, (6,6)) # 36 long, 6 x 6 covariance matrix
+        self.covariance = np.sum(np.diag(covariance_matrix)) # Get sum of diagonal elements of covariance matrix
+        
+        self.amclx = msg.pose.pose.position.x
+        self.amcly = msg.pose.pose.position.y
+        self.amcl_theta = msg.pose.pose.orientation.w
+            self.home = (0,0)
         self.got_home = True
 
         
 
 
-
     
+
     #commulative service that takes in a  map(Occumpancy Grid)
     #returns a poseStamped(a place in the frontier to navigate to)
     def frontier_path_handler(self, mapdata:OccupancyGrid):
@@ -86,7 +186,8 @@ class FrontierNodeClient:
         
 
         plan = PathPlanner
-        mapdata = plan.request_map2()
+        mapdata = plan.request_map() # mapdata of amcl map from static map taken from map server
+        #mapdata = plan.request_map2()
         rospy.sleep(1)
         padding_cells = plan.calc_cspace2(plan, mapdata, 2)
         for pc in padding_cells:

@@ -784,6 +784,7 @@ class PathPlanner:
         if mapdata is None:
             return Path()
         ## Calculate the C-space and publish it
+        self.current_map = mapdata
         print(mapdata.info.resolution)
         print(mapdata.info.height)
         print(mapdata.info.width)
