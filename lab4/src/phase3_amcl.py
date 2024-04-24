@@ -15,7 +15,7 @@ from path_planner_client import PathPlannerClient
 import copy
 from tf.transformations import euler_from_quaternion
 import tf 
-from tf import TransformListener,
+from tf import TransformListener
 from std_msgs.msg import Bool
 from math import pi
 import numpy as np
@@ -32,10 +32,12 @@ class FrontierNodeClient:
         #comment out the current forntier_path_handler
         self.go_to_pub = rospy.Publisher('move_base_simple/goal', PoseStamped, queue_size=10)
 
-        self.dest_pub = rospy.Publisher('/dest', GridCells, queue_size=10)
-        self.cspace_pub = rospy.Publisher('/plan_path/cspace', GridCells, queue_size=10)
-        self.edge_cells_pub = rospy.Publisher('/edge_cells', GridCells, queue_size=10)
-        self.gotroid_pub = rospy.Publisher('/gotroid', GridCells , queue_size=10 )
+        # self.dest_pub = rospy.Publisher('/dest', GridCells, queue_size=10)
+        # self.cspace_pub = rospy.Publisher('/plan_path/cspace', GridCells, queue_size=10)
+        # self.edge_cells_pub = rospy.Publisher('/edge_cells', GridCells, queue_size=10)
+        # self.gotroid_pub = rospy.Publisher('/gotroid', GridCells , queue_size=10 )
+
+
         #self.frontier_nav_service = rospy.Service('/map', GetMap, self.frontier_path_handler)
 
         self.frontier_centroids_pub = rospy.Publisher('/frontier_centroids', GridCells, queue_size=10)
@@ -56,15 +58,14 @@ class FrontierNodeClient:
         
 
 
+        # #update map in rviz
+        # self.update_rivz = rospy.Publisher('/map_updates', OccupancyGridUpdate, queue_size=10)
 
-
-
-        #update map in rviz
-        self.update_rivz = rospy.Publisher('/map_updates', OccupancyGridUpdate, queue_size=10)
         #update odom NEW
         rospy.Subscriber('/tf', TransformStamped, self.update_odometry)
-
         rospy.Subscriber('bool_topic', Bool, self.wait_for_waypoint)
+
+        self.listener = tf.TransformListener()
 
         self.px = 0
         self.py = 0 
@@ -178,32 +179,32 @@ class FrontierNodeClient:
                 
 
 
-        print("LIST SORTED ITS TIME TO MOVE!")
+        # print("LIST SORTED ITS TIME TO MOVE!")
       
 
-        self.move_to_frontier(mapdata, centroids)
-        #LETS HOME THIS WORK
-        print("FINISHED MOVE")
-        # rospy.sleep(10)
+        # self.move_to_frontier(mapdata, centroids)
+        # #LETS HOME THIS WORK
+        # print("FINISHED MOVE")
+        # # rospy.sleep(10)
 
 
 
-        self.cspace_pub.publish(plan.makeDisplayMsg(plan, mapdata, padding_cells))
+        # self.cspace_pub.publish(plan.makeDisplayMsg(plan, mapdata, padding_cells))
 
-        #self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, edges))
+        # #self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, edges))
         
 
-        #self.gotroid_pub.publish(plan.makeDisplayMsg(plan, mapdata, self.going_centroid))
+        # #self.gotroid_pub.publish(plan.makeDisplayMsg(plan, mapdata, self.going_centroid))
         
             
-        print("Got the edge cells!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1111")
+        # print("Got the edge cells!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1111")
     
-    def return_to_start(self):
-        starting_pose = PoseStamped()
-        starting_pose.pose.position.x = self.world_to_grid(self.starting_position[0])
-        starting_pose.pose.position.y = self.world_to_grid(self.starting_position[1])
-        starting_pose.header.frame_id = "map"
-        starting_pose.header.stamp = rospy.Time.now()
+    # def return_to_start(self):
+    #     starting_pose = PoseStamped()
+    #     starting_pose.pose.position.x = self.world_to_grid(self.starting_position[0])
+    #     starting_pose.pose.position.y = self.world_to_grid(self.starting_position[1])
+    #     starting_pose.header.frame_id = "map"
+    #     starting_pose.header.stamp = rospy.Time.now()
         #PathPlannerClient.path_planner_client(self, starting_pose)
 
 
@@ -222,204 +223,204 @@ class FrontierNodeClient:
     #      print("Service call failed: %s"%e)
     
     #gets the map from gmapping(topic is /map)
-    def update_map():
-        return
+    # def update_map():
+    #     return
     
     #update the rviz map by publishing to map_updates
     #will update the rivz and thats it as only sub is rviz
-    def update_rivz():
-        return
+    # def update_rivz():
+    #     return
     
-    def find_shape(self, mapdata: OccupancyGrid, p: tuple[int, int]) -> list[tuple[int, int]]:
-        shape = []
-        shape.append(p)
+    # def find_shape(self, mapdata: OccupancyGrid, p: tuple[int, int]) -> list[tuple[int, int]]:
+    #     shape = []
+    #     shape.append(p)
         
         
-        queue = []     #Initialize a queue
-        visited = [] # List for visited nodes.
-        visited.append(p)
-        queue.append(p)
-        while queue:
+    #     queue = []     #Initialize a queue
+    #     visited = [] # List for visited nodes.
+    #     visited.append(p)
+    #     queue.append(p)
+    #     while queue:
 
 
-            m = queue.pop(0)
-            shape.append(m)
-            # self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, shape))
-            # rospy.sleep(0.07)
+    #         m = queue.pop(0)
+    #         shape.append(m)
+    #         # self.edge_cells_pub.publish(plan.makeDisplayMsg(plan, mapdata, shape))
+    #         # rospy.sleep(0.07)
             
             
-            N_list = PathPlanner.neighbors(mapdata, m)
-            for e_cell in N_list:
-                index = PathPlanner.grid_to_index(mapdata, e_cell)
-                value = mapdata.data[index]
-                if (self.is_edge(mapdata, e_cell)) and PathPlanner.is_cell_walkable(mapdata, e_cell) and e_cell not in visited:
-                    visited.append(e_cell)
-                    queue.append(e_cell)
+    #         N_list = PathPlanner.neighbors(mapdata, m)
+    #         for e_cell in N_list:
+    #             index = PathPlanner.grid_to_index(mapdata, e_cell)
+    #             value = mapdata.data[index]
+    #             if (self.is_edge(mapdata, e_cell)) and PathPlanner.is_cell_walkable(mapdata, e_cell) and e_cell not in visited:
+    #                 visited.append(e_cell)
+    #                 queue.append(e_cell)
 
-        print("done, returning shape")
-        return shape
+    #     print("done, returning shape")
+    #     return shape
                     
 
         
-    def is_edge(self, mapdata: OccupancyGrid, cell)-> bool:
-        isEdge = False
-        n_list = PathPlanner.neighbors(mapdata, cell)
-        for n_cell in n_list:
-            index = PathPlanner.grid_to_index(mapdata, n_cell) 
-            value = mapdata.data[index]
-            if value == -1 :
-                isEdge = True
-        return isEdge
+    # def is_edge(self, mapdata: OccupancyGrid, cell)-> bool:
+    #     isEdge = False
+    #     n_list = PathPlanner.neighbors(mapdata, cell)
+    #     for n_cell in n_list:
+    #         index = PathPlanner.grid_to_index(mapdata, n_cell) 
+    #         value = mapdata.data[index]
+    #         if value == -1 :
+    #             isEdge = True
+    #     return isEdge
     
 
-    def edge_detection2(self, mapdata: OccupancyGrid)-> list[list[tuple[int, int]]]:
-        cell_list = []
-        shapes = []
+    # def edge_detection2(self, mapdata: OccupancyGrid)-> list[list[tuple[int, int]]]:
+    #     cell_list = []
+    #     shapes = []
         
-        map_width = mapdata.info.width
-        for cell_index in range(len(mapdata.data)):
+    #     map_width = mapdata.info.width
+    #     for cell_index in range(len(mapdata.data)):
                 
                 
-            cell_coordinate_y = int(cell_index / map_width)
-            cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
-            cell_coordinate = (cell_coordinate_x, cell_coordinate_y)
-            if PathPlanner.is_cell_walkable(mapdata, cell_coordinate) and self.is_edge(mapdata, cell_coordinate):
-                cell_list.append(cell_coordinate)
+    #         cell_coordinate_y = int(cell_index / map_width)
+    #         cell_coordinate_x = int(cell_index - (cell_coordinate_y * map_width))
+    #         cell_coordinate = (cell_coordinate_x, cell_coordinate_y)
+    #         if PathPlanner.is_cell_walkable(mapdata, cell_coordinate) and self.is_edge(mapdata, cell_coordinate):
+    #             cell_list.append(cell_coordinate)
 
-        while cell_list:
-            shape = self.find_shape(mapdata, cell_list[0])
-            shapes.append(shape)
-            for c in shape:
-                if c in cell_list:
-                    cell_list.remove(c)
+    #     while cell_list:
+    #         shape = self.find_shape(mapdata, cell_list[0])
+    #         shapes.append(shape)
+    #         for c in shape:
+    #             if c in cell_list:
+    #                 cell_list.remove(c)
 
 
             
             
-        return shapes
+    #     return shapes
 
         
 
 
     
 
-    def frontier_centroid(self, list_of_edge_cell_lists: list[list[tuple[int, int]]]) -> list[tuple[int, int]]:
+    # def frontier_centroid(self, list_of_edge_cell_lists: list[list[tuple[int, int]]]) -> list[tuple[int, int]]:
 
         
-        # resolution = mapdata.info.resolution
-        frontier_centroid_list = []
+    #     # resolution = mapdata.info.resolution
+    #     frontier_centroid_list = []
 
-        for edge_cell_list in list_of_edge_cell_lists:
-            num_items_in_sublist = len(edge_cell_list)
-            print("number of items: " + str(num_items_in_sublist))
-            print(type(edge_cell_list))
+    #     for edge_cell_list in list_of_edge_cell_lists:
+    #         num_items_in_sublist = len(edge_cell_list)
+    #         print("number of items: " + str(num_items_in_sublist))
+    #         print(type(edge_cell_list))
 
-            cell_coordinate_x = 0
-            cell_coordinate_y = 0
+    #         cell_coordinate_x = 0
+    #         cell_coordinate_y = 0
         
-            for x, y in edge_cell_list:
-                cell_coordinate_x += x
-                cell_coordinate_y += y
-                # print("x coordinate: " + str(cell_coordinate_x))
-                # print("y coordinate: " + str(cell_coordinate_y))  
+    #         for x, y in edge_cell_list:
+    #             cell_coordinate_x += x
+    #             cell_coordinate_y += y
+    #             # print("x coordinate: " + str(cell_coordinate_x))
+    #             # print("y coordinate: " + str(cell_coordinate_y))  
 
-            cell_coordinate_x /= num_items_in_sublist 
-            cell_coordinate_y /= num_items_in_sublist 
+    #         cell_coordinate_x /= num_items_in_sublist 
+    #         cell_coordinate_y /= num_items_in_sublist 
         
-            frontier_centroid = (int(cell_coordinate_x), int(cell_coordinate_y))
-            frontier_centroid_list.append(frontier_centroid)
-            print(frontier_centroid_list)
+    #         frontier_centroid = (int(cell_coordinate_x), int(cell_coordinate_y))
+    #         frontier_centroid_list.append(frontier_centroid)
+    #         print(frontier_centroid_list)
 
-        # grid_cell_msg = GridCells()
-        # grid_cell_msg.header.stamp = rospy.Time.now()
-        # grid_cell_msg.header.frame_id = "map"
-        # grid_cell_msg.cell_height = resolution
-        # grid_cell_msg.cell_width = resolution
-        # grid_cell_msg.cells = frontier_centroid_list
+    #     # grid_cell_msg = GridCells()
+    #     # grid_cell_msg.header.stamp = rospy.Time.now()
+    #     # grid_cell_msg.header.frame_id = "map"
+    #     # grid_cell_msg.cell_height = resolution
+    #     # grid_cell_msg.cell_width = resolution
+    #     # grid_cell_msg.cells = frontier_centroid_list
 
-        #self.frontier_centroids_pub.publish(PathPlanner.makeDisplayMsg(mapdata, frontier_centroid_list))
+    #     #self.frontier_centroids_pub.publish(PathPlanner.makeDisplayMsg(mapdata, frontier_centroid_list))
         
-        return frontier_centroid_list
+    #     return frontier_centroid_list
         
 
     
-    #works by grapping odom data and then calculating the closest euclidean distance to a frontier and moving towards it
-    def move_to_frontier(self, mapdata: OccupancyGrid, list_of_centroids: list[tuple[int,int]]) -> PoseStamped:
+    # #works by grapping odom data and then calculating the closest euclidean distance to a frontier and moving towards it
+    # def move_to_frontier(self, mapdata: OccupancyGrid, list_of_centroids: list[tuple[int,int]]) -> PoseStamped:
         
         
 
-        shortest_distance = 100000
-        current_tuple = (0,0)
+    #     shortest_distance = 100000
+    #     current_tuple = (0,0)
         
-        wp = Point()
-        wp.x = self.px
-        print("CURRENT X WORLD: "+str(wp.x))
-        wp.y = self.py
-        grid_robot = self.world_to_grid(mapdata, wp)
+    #     wp = Point()
+    #     wp.x = self.px
+    #     print("CURRENT X WORLD: "+str(wp.x))
+    #     wp.y = self.py
+    #     grid_robot = self.world_to_grid(mapdata, wp)
         
         
         
-        #loop to find closest
-        print("finding closest")
+    #     #loop to find closest
+    #     print("finding closest")
         
-        for frontier in list_of_centroids:
-            distance = PathPlanner.euclidean_distance(grid_robot, frontier)
-            if distance < shortest_distance:
-                shortest_distance = distance
-                current_tuple = frontier
+    #     for frontier in list_of_centroids:
+    #         distance = PathPlanner.euclidean_distance(grid_robot, frontier)
+    #         if distance < shortest_distance:
+    #             shortest_distance = distance
+    #             current_tuple = frontier
         
-        check = PathPlanner
-        print("CURRENT TUPLE ========================" + str(current_tuple))
-        destination = []
-        destination.append(current_tuple)
-        self.dest_pub.publish(check.makeDisplayMsg(check, mapdata, destination))
+    #     check = PathPlanner
+    #     print("CURRENT TUPLE ========================" + str(current_tuple))
+    #     destination = []
+    #     destination.append(current_tuple)
+    #     self.dest_pub.publish(check.makeDisplayMsg(check, mapdata, destination))
 
         
 
-        go_to_pose = PoseStamped()
-        go_to_pose.pose.position.x = current_tuple[0]
-        go_to_pose.pose.position.y = current_tuple[1]
-        go_to_pose.header.frame_id = "map"
-        go_to_pose.header.stamp = rospy.Time.now()
-        print("CHECK")
+    #     go_to_pose = PoseStamped()
+    #     go_to_pose.pose.position.x = current_tuple[0]
+    #     go_to_pose.pose.position.y = current_tuple[1]
+    #     go_to_pose.header.frame_id = "map"
+    #     go_to_pose.header.stamp = rospy.Time.now()
+    #     print("CHECK")
 
         
         
 
-        poses = self.get_astar_path(mapdata, go_to_pose)
+    #     poses = self.get_astar_path(mapdata, go_to_pose)
 
-        #if astar returns no path, go to next frontier
-        if poses == None:
-            rospy.loginfo("NO PATH CAME BACK, GO TO NEXT FRONTIER**********************************")
-            list_of_centroids.remove(current_tuple)
-            self.move_to_frontier(mapdata, list_of_centroids)
+    #     #if astar returns no path, go to next frontier
+    #     if poses == None:
+    #         rospy.loginfo("NO PATH CAME BACK, GO TO NEXT FRONTIER**********************************")
+    #         list_of_centroids.remove(current_tuple)
+    #         self.move_to_frontier(mapdata, list_of_centroids)
        
 
 
-        self.go_to_frontier(mapdata, poses)
+    #     self.go_to_frontier(mapdata, poses)
 
           
         
-        #go_to_pose.pose.orientation
-        #moving to point with astar
-        print("FOUND POINT TIME TO ASTAR")
-        print(current_tuple[0], current_tuple[1])
+    #     #go_to_pose.pose.orientation
+    #     #moving to point with astar
+    #     print("FOUND POINT TIME TO ASTAR")
+    #     print(current_tuple[0], current_tuple[1])
     
-        #suppose to move but doesnt :()
-        #PathPlannerClient.path_planner_client(self, go_to_pose)
+    #     #suppose to move but doesnt :()
+    #     #PathPlannerClient.path_planner_client(self, go_to_pose)
 
-        #global value just for rviz and testing
+    #     #global value just for rviz and testing
         
         
-        #return what point robot is going
-        return go_to_pose
+    #     #return what point robot is going
+    #     return go_to_pose
     
-    def go_to_frontier(self, mapdata: OccupancyGrid, poses):
-        for waypoint in poses:
-            self.go_to_pub.publish(waypoint)
-            print("waitig")
-            rospy.wait_for_message('bool_topic', Bool)
-        print("REACHED FINAL POSE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    # def go_to_frontier(self, mapdata: OccupancyGrid, poses):
+    #     for waypoint in poses:
+    #         self.go_to_pub.publish(waypoint)
+    #         print("waitig")
+    #         rospy.wait_for_message('bool_topic', Bool)
+    #     print("REACHED FINAL POSE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
         
         
 
