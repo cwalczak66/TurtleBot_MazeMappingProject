@@ -24,6 +24,7 @@ from math import pi
 import numpy as np 
 from std_srvs.srv import Empty as ros_empty
 from geometry_msgs.msg import Quaternion
+from math import sqrt , pi, atan2, sin, cos 
 
 
 class FrontierNodeClient:
@@ -66,7 +67,7 @@ class FrontierNodeClient:
 
         # rospy.Subscriber('/' , PoseStamped, self.drive_home)
         # rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.drive_home)
-        rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.print_point)
+        rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.drive_home)
 
        
         
@@ -216,12 +217,14 @@ class FrontierNodeClient:
         loc()
         print("")
         print("default cov: " + str(self.covariance))
-        while (number_of_turns < 10):
+        #while (number_of_turns < 10):
 
-            print("covariance value" + str(self.covariance))
-            self.rotate(pi/2, 0.1)
-            number_of_turns += 1
-            rospy.sleep(.75)
+        print("covariance value" + str(self.covariance))
+        self.rotate(pi, 0.1)
+        self.rotate(0.0, 0.1)
+        number_of_turns += 1
+        rospy.sleep(.75)
+            
         
         # Moving the robot to the goal once localized
         rospy.loginfo("Localized. Waiting for destination")
@@ -253,7 +256,7 @@ class FrontierNodeClient:
     def wait_for_waypoint(self, msg: Bool):
         pass
 
-    def drive_home(self, msg: PoseStamped):
+    def drive_home(self, goal: PoseStamped):
         
         print("in drive")
         print(self.px)
@@ -270,16 +273,27 @@ class FrontierNodeClient:
         
 
         mapdata = self.request_map()
-        print("Robot end pose: " + str((msg.pose.position.x, msg.pose.position.y)) + " in grid: " + str(self.world_to_grid(mapdata, msg.pose.position)))
-    
+        # start = PoseStamped()
+        # start.pose.position = Point(self.px, self.py, 0)
+        # quaternion = tf.transformations.quaternion_from_euler(0, 0, self.pth)
+        # start.pose.orientation = quaternion
+        # start.header.frame_id = "map"
 
-        waypoints = self.get_astar_path(mapdata, msg)
+        #print("Robot start pose: " + str(self.world_to_grid(mapdata, start.pose.position)))
+        print("Robot end pose: " + str(self.world_to_grid(mapdata, goal.pose.position)))
+        goal_grid = self.world_to_grid(mapdata, goal.pose.position)
+        goal.pose.position.x = goal_grid[0]
+        goal.pose.position.y = goal_grid[1]
+
+
+        waypoints = self.get_astar_path(mapdata, goal)
       
 
         for waypoint in waypoints:
-            self.go_to_pub.publish(waypoint)
+            #self.go_to_pub.publish(waypoint)
+            self.go_to(waypoint)
             print("waiting")
-            rospy.wait_for_message('bool_topic', Bool)
+            #rospy.wait_for_message('bool_topic', Bool)
 
         print("DONE WITH EVERYTHINGS")
 
@@ -333,10 +347,10 @@ class FrontierNodeClient:
         plan = PathPlanner
         print("calling on server")
 
+        
         start = PoseStamped()
         wp = Point()
         wp.x = self.px
-        print("CURRENT X WORLD: "+str(wp.x))
         wp.y = self.py
         grid_robot = self.world_to_grid(mapdata, wp)
         
@@ -344,6 +358,7 @@ class FrontierNodeClient:
         start.pose.position.y = grid_robot[1]
         start.header.frame_id = "map"
         start.header.stamp = rospy.Time.now()
+
         try:
             path_planner_call = rospy.ServiceProxy('amcl_srv', GetPlan)
             resp = path_planner_call(start, goal, 0)
@@ -363,10 +378,10 @@ class FrontierNodeClient:
                 print("ERROR ERROR ERROR TRY SOMETHINGS ELSEEEEEE")
                 return None
             else:
-                return resp.poses
+                return resp.plan.poses
 
 
-            return resp.plan.poses
+            #return resp.plan.poses
 
         except rospy.ServiceException as e:
             print("Service call has failed: %s"%e)
@@ -423,6 +438,87 @@ class FrontierNodeClient:
         except (tf.LookupException, tf.ConnectivityException,   tf.ExtrapolationException):
             print("Not working")
             pass
+
+    #GO_TO WAITS FOR POSESTAMPED MESSAGE AND THEN MOVES TO DESIRED XYZ POSITION AND FINAL ROTATION
+    def go_to(self, msg: PoseStamped):
+        """
+        Calls rotate(), drive(), and rotate() to attain a given pose.
+        This method is a callback bound to a Subscriber.
+        :param msg [PoseStamped] The target pose.
+        """
+        ### REQUIRED CREDIT
+        rospy.wait_for_message("/odom", Odometry)
+        #rospy.loginfo(msg)
+        target_x = msg.pose.position.x
+        target_y = msg.pose.position.y 
+        delta_y = target_y - self.py
+        delta_x = target_x - self.px 
+        quat_orig = msg.pose.orientation
+        quat_list = [quat_orig.x, quat_orig.y, quat_orig.z, quat_orig.w]
+        (roll, pitch, yaw) = euler_from_quaternion(quat_list)
+
+        angle_to_pose = atan2(delta_y, delta_x)
+        rospy.loginfo("target x = " + str(target_x) + " target y = " + str(target_y))
+        rospy.loginfo("current x = " + str(self.px) + " current y = " + str(self.py))
+        rospy.loginfo("delta x = " + str(delta_x) + " delta y = " + str(delta_y))
+        
+        # Rotate to look at target location
+        self.rotate(angle_to_pose, 0.5)
+        print("rotation 1 complete!")
+        rospy.sleep(0.01)
+
+        # Drive to target location
+        
+        distance_to_target = abs(sqrt(pow(delta_y, 2) + (pow(delta_x, 2))**2))
+        
+        self.drive(distance_to_target, 0.13)
+        print("Reached target location!")
+        rospy.sleep(0.01)
+
+
+
+        # Rotate to target orientation
+        # self.rotate(yaw, 0.4)
+        # print("Reached target pose!")
+
+
+
+        print("")
+        rospy.loginfo("target x = " + str(target_x) + " target y = " + str(target_y))
+        rospy.loginfo("current x = " + str(self.px) + " current y = " + str(self.py))
+        print("")
+        print("")
+
+ 
+        
+
+
+    #DRIVE TELLS THE TURTLEBOT TO GO STRAIGHT FOR A SPECIFIED DISTANCE AND SPEED
+    def drive(self, distance: float, linear_speed: float):
+        """
+        Drives the robot in a straight line.
+        :param distance     [float] [m]   The distance to cover.
+        :param linear_speed [float] [m/s] The forward linear speed.
+        """
+        ### REQUIRED CREDIT
+        # wait until a new odometry msg is recived
+        print(f'in drive, distance target: {distance}')
+        rospy.wait_for_message("/odom", Odometry)
+        initialPose_x = self.px
+        initialPose_y = self.py
+        distanceTolerance = 0.04
+        curr_distance = 0.0
+        rate = rospy.Rate(10) # Publish rate of 10Hz
+        while (not rospy.is_shutdown()) and (abs(distance - curr_distance) >= distanceTolerance):
+        # Euclidean distance difference - "error"
+        
+            self.send_speed(linear_speed, 0.0)
+            rate.sleep()
+            curr_distance = abs(sqrt(pow(self.py - initialPose_y, 2 ) + (pow(self.px - initialPose_x, 2))**2))
+            #rospy.loginfo(f'distance to target: {abs(distance - curr_distance)}')
+        self.send_speed(0.0, 0.0)
+        print("reached target distance")
+
 
 
     def run(self):
