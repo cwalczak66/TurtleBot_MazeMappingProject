@@ -10,6 +10,7 @@ from std_msgs.msg import Bool
 import tf
 from tf import TransformListener
 from geometry_msgs.msg import Quaternion
+import time
 
 
 class Lab2:
@@ -69,23 +70,26 @@ class Lab2:
         """
         ### REQUIRED CREDIT
         # wait until a new odometry msg is recived
-
+        current_time = time.time()
         
+    
+        end_time = current_time+11
 
         print(f'in drive, distance target: {distance}')
         rospy.wait_for_message("/odom", Odometry)
         initialPose_x = self.px
         initialPose_y = self.py
-        distanceTolerance = 0.02
+        distanceTolerance = 0.01
         curr_distance = 0.0
         rate = rospy.Rate(10) # Publish rate of 10Hz
-        while (not rospy.is_shutdown()) and (abs(distance - curr_distance) >= distanceTolerance):
+        while (not rospy.is_shutdown()) and (abs(distance - curr_distance) >= distanceTolerance) and (current_time < end_time):
         # Euclidean distance difference - "error"
-        
+            current_time = time.time()
+            print("current " + str(current_time))
             self.send_speed(linear_speed, 0.0)
             rate.sleep()
             curr_distance = abs(sqrt(pow(self.py - initialPose_y, 2 ) + (pow(self.px - initialPose_x, 2))**2))
-            #rospy.loginfo(f'distance to target: {abs(distance - curr_distance)}')
+            rospy.loginfo(f'distance to target: {abs(distance - curr_distance)}')
         self.send_speed(0.0, 0.0)
         print("reached target distance")
 
@@ -99,7 +103,7 @@ class Lab2:
         :param angular_speed [float] [rad/s] The angular speed.
         """
         ### REQUIRED CREDIT
-        ang_tol = 0.1
+        ang_tol = 0.09
         rospy.wait_for_message("/odom", Odometry) #wait for angle update before execution
         rate = rospy.Rate(10) # Publish rate of 10Hz
 
@@ -160,17 +164,17 @@ class Lab2:
         rospy.loginfo("delta x = " + str(delta_x) + " delta y = " + str(delta_y))
         
         # Rotate to look at target location
-        self.rotate(angle_to_pose, 0.45)
+        self.rotate(angle_to_pose, 0.25)
         print("rotation 1 complete!")
-        rospy.sleep(0.04)
+        rospy.sleep(0.1)
 
         # Drive to target location
         
         distance_to_target = abs(sqrt(pow(delta_y, 2) + (pow(delta_x, 2))**2))
         
-        self.drive(distance_to_target, 0.12)
+        self.drive(distance_to_target, 0.1)
         print("Reached target location!")
-        rospy.sleep(0.04)
+        rospy.sleep(0.1)
 
 
 

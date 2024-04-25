@@ -67,7 +67,7 @@ class FrontierNodeClient:
 
         # rospy.Subscriber('/' , PoseStamped, self.drive_home)
         # rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.drive_home)
-        rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.drive_home)
+        rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.wait_for_goal)
 
        
         
@@ -106,6 +106,8 @@ class FrontierNodeClient:
         self.amcloy = 0
         self.amcloz = 0
         self.amclow = 0 
+        
+        self.home = PoseStamped()
 
        
 
@@ -218,16 +220,19 @@ class FrontierNodeClient:
         print("")
         print("default cov: " + str(self.covariance))
         #while (number_of_turns < 10):
-
+        self.rotate(0.0, 0.9)
         print("covariance value" + str(self.covariance))
-        self.rotate(pi, 0.1)
-        self.rotate(0.0, 0.1)
+        self.rotate(pi/2, 0.2)
+        
         number_of_turns += 1
         rospy.sleep(.75)
             
         
         # Moving the robot to the goal once localized
         rospy.loginfo("Localized. Waiting for destination")
+        
+        rospy.wait_for_message("/move_base_simple/goal", PoseStamped)
+        self.drive_home(self.home)
         #rospy.wait_for_message('final_goal', PoseStamped)
         # rospy.wait_for_message(PoseStamped)
         # go_to_msg = PoseStamped()
@@ -255,6 +260,10 @@ class FrontierNodeClient:
 
     def wait_for_waypoint(self, msg: Bool):
         pass
+    
+    def wait_for_goal(self, msg: PoseStamped):
+        self.home = msg
+        return
 
     def drive_home(self, goal: PoseStamped):
         
@@ -288,9 +297,15 @@ class FrontierNodeClient:
 
         waypoints = self.get_astar_path(mapdata, goal)
       
-
+        count = 0
         for waypoint in waypoints:
             #self.go_to_pub.publish(waypoint)
+            count = count + 1
+            if count == 7:
+                p_msg = PointStamped
+                
+                self.amcl_localize(p_msg)
+                count = 0
             self.go_to(waypoint)
             print("waiting")
             #rospy.wait_for_message('bool_topic', Bool)
@@ -463,7 +478,7 @@ class FrontierNodeClient:
         rospy.loginfo("delta x = " + str(delta_x) + " delta y = " + str(delta_y))
         
         # Rotate to look at target location
-        self.rotate(angle_to_pose, 0.5)
+        self.rotate(angle_to_pose, 0.25)
         print("rotation 1 complete!")
         rospy.sleep(0.01)
 
@@ -471,7 +486,7 @@ class FrontierNodeClient:
         
         distance_to_target = abs(sqrt(pow(delta_y, 2) + (pow(delta_x, 2))**2))
         
-        self.drive(distance_to_target, 0.13)
+        self.drive(distance_to_target, 0.1)
         print("Reached target location!")
         rospy.sleep(0.01)
 
