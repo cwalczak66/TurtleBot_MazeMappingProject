@@ -64,9 +64,11 @@ class FrontierNodeClient:
         rospy.Subscriber('bool_topic', Bool, self.wait_for_waypoint)
 
 
-        rospy.Subscriber('initialpose' , PoseWithCovarianceStamped, self.drive_home)
+        # rospy.Subscriber('/' , PoseStamped, self.drive_home)
+        # rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.drive_home)
+        rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.print_point)
 
-        #rospy.Subscriber('final_goal', PoseStamped, self.drive_home)
+       
         
 
 
@@ -126,7 +128,15 @@ class FrontierNodeClient:
         except rospy.ServiceException as e:
          print("Service call failed: %s"%e)
     
-
+    def print_point(self, msg: PoseStamped):
+        
+        mapdata = self.request_map()
+        print("Robot end pose: " + str((msg.pose.position.x, msg.pose.position.y)) + " in grid: " + str(self.world_to_grid(mapdata, msg.pose.position)))
+        p = Point()
+        p.x = self.px
+        p.y = self.py
+        print("Robot current pose: " + str((self.px, self.py)) + " in grid: " + str(self.world_to_grid(mapdata, p)))
+        
 
     def send_speed(self, linear_speed: float, angular_speed: float):
         """
@@ -243,7 +253,7 @@ class FrontierNodeClient:
     def wait_for_waypoint(self, msg: Bool):
         pass
 
-    def drive_home(self, msg: PoseWithCovarianceStamped):
+    def drive_home(self, msg: PoseStamped):
         
         print("in drive")
         print(self.px)
@@ -252,15 +262,18 @@ class FrontierNodeClient:
 
         #rospy.wait_for_message(PoseStamped)
 
-        end = PoseStamped()
-        end.header.frame_id = "map"
-        end.header.stamp = rospy.Time.now()
-        end.pose = msg.pose
+        # end = PoseStamped()
+        # end.header.frame_id = "map"
+        # end.header.stamp = rospy.Time.now()
+        # end.pose = msg.pose.pose
+
+        
 
         mapdata = self.request_map()
+        print("Robot end pose: " + str((msg.pose.position.x, msg.pose.position.y)) + " in grid: " + str(self.world_to_grid(mapdata, msg.pose.position)))
     
 
-        waypoints = self.get_astar_path(mapdata, end)
+        waypoints = self.get_astar_path(mapdata, msg)
       
 
         for waypoint in waypoints:
@@ -408,7 +421,7 @@ class FrontierNodeClient:
             self.py = location.y
             self.pth = yaw
         except (tf.LookupException, tf.ConnectivityException,   tf.ExtrapolationException):
-            #print("Not working")
+            print("Not working")
             pass
 
 

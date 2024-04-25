@@ -42,7 +42,7 @@ Visualization Manager:
       Cell Size: 0.02500000037252903
       Class: rviz/Grid
       Color: 160; 160; 164
-      Enabled: true
+      Enabled: false
       Line Style:
         Line Width: 0.029999999329447746
         Value: Lines
@@ -55,7 +55,7 @@ Visualization Manager:
       Plane: XY
       Plane Cell Count: 400
       Reference Frame: <Fixed Frame>
-      Value: true
+      Value: false
     - Alpha: 1
       Class: rviz/Axes
       Enabled: true
@@ -336,7 +336,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: -6.7950005531311035
+      Angle: -8.07500171661377
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
@@ -346,10 +346,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 878.4434814453125
+      Scale: 837.5841064453125
       Target Frame: <Fixed Frame>
-      X: 0.15466468036174774
-      Y: -0.05559954419732094
+      X: -0.05631357803940773
+      Y: 0.05546991899609566
     Saved: ~
 Window Geometry:
   Camera:
