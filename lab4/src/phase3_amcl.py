@@ -64,7 +64,7 @@ class FrontierNodeClient:
         rospy.Subscriber('bool_topic', Bool, self.wait_for_waypoint)
 
 
-        rospy.Subscriber('initalpose' , PoseWithCovarianceStamped, self.drive_home)
+        rospy.Subscriber('initialpose' , PoseWithCovarianceStamped, self.drive_home)
 
         #rospy.Subscriber('final_goal', PoseStamped, self.drive_home)
         
@@ -258,7 +258,8 @@ class FrontierNodeClient:
         end.pose = msg.pose
 
         mapdata = self.request_map()
-        
+    
+
         waypoints = self.get_astar_path(mapdata, end)
       
 
@@ -271,44 +272,36 @@ class FrontierNodeClient:
 
         
 
-    def get_astar_path(self, mapdata: OccupancyGrid, goal: PoseStamped):
-        plan = PathPlanner
-        print("calling on server")
+    # def get_astar_path(self, mapdata: OccupancyGrid, goal: PoseStamped):
+    #     plan = PathPlanner
+    #     print("calling on server")
 
-        start = PoseStamped()
-        wp = Point()
-        wp.x = self.px
-        wp.y = self.py
-        grid_robot = self.world_to_grid(mapdata, wp)
+    #     start = PoseStamped()
+    #     wp = Point()
+    #     wp.x = self.px
+    #     wp.y = self.py
+    #     grid_robot = self.world_to_grid(mapdata, wp)
         
-        start.pose.position.x = grid_robot[0]
-        start.pose.position.y = grid_robot[1]
-        start.header.frame_id = "map"
-        start.header.stamp = rospy.Time.now()
-       
-        
-
-       
-        try:
-            amcl_path = rospy.ServiceProxy('amcl_srv', GetPlan)
-            resp = amcl_path(start, goal, 0)
-
-
-            if not resp.plan.poses:
+    #     start.pose.position.x = grid_robot[0]
+    #     start.pose.position.y = grid_robot[1]
+    #     start.header.frame_id = "map"
+    #     start.header.stamp = rospy.Time.now()
+    #     try:
+    #         amcl_path = rospy.ServiceProxy('amcl_srv', GetPlan)
+    #         resp = amcl_path(start, goal, 0)
+    #         if not resp.plan.poses:
               
-                return None
-            else:
-                return resp.plan.poses
+    #             return None
+    #         else:
+    #             #trying something
+    #             return resp.poses
 
 
-            #return resp.plan.poses
+    #         #return resp.plan.poses
 
-        except rospy.ServiceException as e:
-            print("Service call has failed: %s"%e)
-            return None
-
-
-
+    #     except rospy.ServiceException as e:
+    #         print("Service call has failed: %s"%e)
+    #         return None
 
 
     def update_covariance(self, msg: PoseWithCovarianceStamped) -> None:
@@ -338,9 +331,6 @@ class FrontierNodeClient:
         start.pose.position.y = grid_robot[1]
         start.header.frame_id = "map"
         start.header.stamp = rospy.Time.now()
-       
-        
-
         try:
             path_planner_call = rospy.ServiceProxy('amcl_srv', GetPlan)
             resp = path_planner_call(start, goal, 0)
@@ -360,7 +350,7 @@ class FrontierNodeClient:
                 print("ERROR ERROR ERROR TRY SOMETHINGS ELSEEEEEE")
                 return None
             else:
-                return resp.plan.poses
+                return resp.poses
 
 
             return resp.plan.poses
@@ -432,5 +422,6 @@ class FrontierNodeClient:
 
         
 if __name__ == '__main__':
+
     FrontierNodeClient().run()
     

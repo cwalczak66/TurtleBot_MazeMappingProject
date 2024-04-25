@@ -157,10 +157,6 @@ class FrontierNodeClient:
             wp.y = self.py
             self.home = self.world_to_grid(mapdata, wp)
             self.got_home = False
-       
-
-        
-
         plan = PathPlanner
         #mapdata = plan.request_map() # mapdata of amcl map from static map taken from map server
         mapdata = plan.request_map2()
