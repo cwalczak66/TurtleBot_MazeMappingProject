@@ -1,4 +1,4 @@
-    #!/usr/bin/env python3
+#!/usr/bin/env python3
 from __future__ import annotations
 from queue import Empty
 #from lab2.src.lab2 import Lab2
@@ -45,10 +45,10 @@ class FrontierNodeClient:
         #rospy.Subscriber('/map', OccupancyGrid, self.update_map)
 
         #subscriber for amcl
-        rospy.Subscriber('amcl_pose', PoseWithCovarianceStamped , self.update_covariance)
+        # rospy.Subscriber('amcl_pose', PoseWithCovarianceStamped , self.update_covariance)
         
         #WHEN THE AMCL WORKS WE GIVE IT ANOTHER NAV GOAL AFTER LOCALIZATION
-        rospy.Subscriber('move_base_simple/goal', PoseStamped, self.amcl_move)
+        # rospy.Subscriber('move_base_simple/goal', PoseStamped, self.amcl_move)
 
 
 
@@ -510,6 +510,7 @@ class FrontierNodeClient:
         
 
         for waypoint in poses:
+            
             self.go_to_pub.publish(waypoint)
             print("waiting")
             rospy.wait_for_message('bool_topic', Bool)

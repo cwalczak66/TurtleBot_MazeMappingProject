@@ -21,7 +21,7 @@
   <node pkg="amcl" type="amcl" name="amcl">
   <param name="min_particles" value="100"/>
   <param name="max_particles" value="3000"/>
-    <param name="update_min_a" value="0.02"/>
+<param name="update_min_a" value="0.02"/>
 <param name="update_min_d" value="0.05"/>
       <param name="resample_interval" value="1"/>
       <param name="laser_likelihood_max_dist" value="2.0"/>

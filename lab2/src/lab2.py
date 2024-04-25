@@ -69,11 +69,14 @@ class Lab2:
         """
         ### REQUIRED CREDIT
         # wait until a new odometry msg is recived
+
+        
+
         print(f'in drive, distance target: {distance}')
         rospy.wait_for_message("/odom", Odometry)
         initialPose_x = self.px
         initialPose_y = self.py
-        distanceTolerance = 0.04
+        distanceTolerance = 0.02
         curr_distance = 0.0
         rate = rospy.Rate(10) # Publish rate of 10Hz
         while (not rospy.is_shutdown()) and (abs(distance - curr_distance) >= distanceTolerance):
@@ -157,17 +160,17 @@ class Lab2:
         rospy.loginfo("delta x = " + str(delta_x) + " delta y = " + str(delta_y))
         
         # Rotate to look at target location
-        self.rotate(angle_to_pose, 0.5)
+        self.rotate(angle_to_pose, 0.45)
         print("rotation 1 complete!")
-        rospy.sleep(0.01)
+        rospy.sleep(0.04)
 
         # Drive to target location
         
         distance_to_target = abs(sqrt(pow(delta_y, 2) + (pow(delta_x, 2))**2))
         
-        self.drive(distance_to_target, 0.13)
+        self.drive(distance_to_target, 0.12)
         print("Reached target location!")
-        rospy.sleep(0.01)
+        rospy.sleep(0.04)
 
 
 
